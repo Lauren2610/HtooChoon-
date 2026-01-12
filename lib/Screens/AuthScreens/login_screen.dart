@@ -111,7 +111,7 @@ class _LeftSideFormState extends State<LeftSideForm> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PlanSelectionScreen(role: "user"),
+                    builder: (context) => PlanSelectionScreen(role: "student"),
                   ),
                 );
               },
@@ -184,7 +184,6 @@ class RightSideVisual extends StatelessWidget {
 }
 
 // WIDGET HELPERS
-
 class LogoWidget extends StatelessWidget {
   const LogoWidget({super.key});
 

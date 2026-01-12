@@ -1,74 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Constants/plan_colors.dart';
 import 'package:htoochoon_flutter/Constants/text_constants.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:flutter/material.dart';
 
-class PlanSelectionScreen extends StatefulWidget {
+class PlanSelectionScreen extends StatelessWidget {
   final String role;
   const PlanSelectionScreen({super.key, required this.role});
 
   @override
-  State<PlanSelectionScreen> createState() => _PlanSelectionScreenState();
-}
-
-class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
-  @override
   Widget build(BuildContext context) {
+    final planColors = Theme.of(context).extension<PlanColors>()!;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double cardWidth = constraints.maxWidth < 600
+                  ? constraints.maxWidth * 0.8
+                  : 300.0;
+              final cards = [
+                PlanCard(
+                  width: cardWidth,
+                  title: "Basic",
+                  price: "\$0",
+                  cardColor: planColors.basic,
+                  bulletColor: Theme.of(context).colorScheme.primary,
+                ),
+                PlanCard(
+                  width: cardWidth,
+                  title: "Pro",
+                  price: "\$29",
+                  cardColor: planColors.pro,
+                  bulletColor: Theme.of(context).colorScheme.primary,
+                ),
+                PlanCard(
+                  width: cardWidth,
+                  title: "Premium",
+                  price: "\$61",
+                  cardColor: planColors.premium,
+                  bulletColor: Colors.white,
+                  textColor: Colors.white,
+                ),
+              ];
 
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Theme.of(context).colorScheme.inversePrimary,
-            ),
-
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Center(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          PlanCard(
-                            cardColor: Theme.of(
-                              context,
-                            ).colorScheme.inversePrimary,
-                            bulletColor: Theme.of(context).colorScheme.primary,
-                            textColor: Theme.of(
-                              context,
-                            ).colorScheme.inversePrimary,
-                          ),
-                          PlanCard(
-                            cardColor: Theme.of(context).colorScheme.secondary,
-                            bulletColor: Theme.of(context).colorScheme.tertiary,
-                            textColor: Theme.of(
-                              context,
-                            ).colorScheme.inversePrimary,
-                          ),
-                          PlanCard(
-                            cardColor: Theme.of(
-                              context,
-                            ).colorScheme.inversePrimary,
-                            bulletColor: Theme.of(context).colorScheme.primary,
-                            textColor: Theme.of(
-                              context,
-                            ).colorScheme.inversePrimary,
-                          ),
-                        ],
-                      ),
+              return Column(
+                children: [
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  Expanded(
+                    child: constraints.maxWidth > 900
+                        ? Center(
+                            child: Wrap(
+                              spacing: 24,
+                              runSpacing: 24,
+                              children: cards,
+                            ),
+                          )
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: cards
+                                  .map(
+                                    (e) => Padding(
+                                      padding: const EdgeInsets.only(right: 16),
+                                      child: e,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -77,105 +90,77 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
 }
 
 class PlanCard extends StatelessWidget {
-  Color? cardColor = Colors.white;
-  Color? bulletColor;
-  Color? textColor;
+  final double width;
+  final String title;
+  final String price;
+  final Color cardColor;
+  final Color bulletColor;
+  final Color? textColor;
 
-  PlanCard({
+  const PlanCard({
     super.key,
+    required this.width,
+    required this.title,
+    required this.price,
     required this.cardColor,
     required this.bulletColor,
-    required this.textColor,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(right: 20),
-      height: 400,
+    final Color effectiveTextColor =
+        textColor ?? Theme.of(context).colorScheme.onSurface;
 
+    return SizedBox(
+      width: width,
       child: Card(
         color: cardColor,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
-          padding: const EdgeInsets.only(right: 20),
+          padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  "Hyper",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: effectiveTextColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 20),
-              Text("\$61", style: tLargeMoneyFont),
-              Padding(
-                padding: EdgeInsets.all(10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "no limit 20+ blablabla better than free plan",
-
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          overflow: TextOverflow.visible,
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 12),
+              Text(
+                price,
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: effectiveTextColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "no limit 20+ blablabla better than free plan",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "no limit 20+ blablabla better than free plan",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 24),
+              _feature("Unlimited access", effectiveTextColor),
+              _feature("Priority support", effectiveTextColor),
+              _feature("Advanced tools", effectiveTextColor),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _feature(String text, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.circle, size: 8, color: bulletColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: TextStyle(color: textColor)),
+          ),
+        ],
       ),
     );
   }
