@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -106,7 +107,14 @@ class _LeftSideFormState extends State<LeftSideForm> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PlanSelectionScreen(role: "user"),
+                  ),
+                );
+              },
               child: Text(
                 isLogin ? "Login" : "Sign Up",
                 style: TextStyle(
