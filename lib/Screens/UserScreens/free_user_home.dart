@@ -10,6 +10,7 @@ class FreeUserHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("HtooChoon"),
         actions: [
           TextButton(
@@ -34,6 +35,7 @@ class FreeUserHome extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Divider(),
             // Search + Categories Row
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -67,6 +69,7 @@ class FreeUserHome extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
