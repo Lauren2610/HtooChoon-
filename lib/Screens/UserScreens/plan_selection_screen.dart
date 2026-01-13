@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Constants/plan_colors.dart';
 import 'package:htoochoon_flutter/Constants/text_constants.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:flutter/material.dart';
 
@@ -19,9 +20,14 @@ class PlanSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final double cardWidth = constraints.maxWidth < 600
-                  ? constraints.maxWidth * 0.8
-                  : 300.0;
+              const double spacing = 16;
+              const int cardCount = 3;
+
+              final totalSpacing = spacing * (cardCount - 1);
+
+              final double cardWidth =
+                  (constraints.maxWidth - totalSpacing) / cardCount;
+
               final cards = [
                 PlanCard(
                   width: cardWidth,
@@ -53,31 +59,16 @@ class PlanSelectionScreen extends StatelessWidget {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => FreeUserHome()),
+                      ),
                     ),
                   ),
-                  Expanded(
-                    child: constraints.maxWidth > 900
-                        ? Center(
-                            child: Wrap(
-                              spacing: 24,
-                              runSpacing: 24,
-                              children: cards,
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: cards
-                                  .map(
-                                    (e) => Padding(
-                                      padding: const EdgeInsets.only(right: 16),
-                                      child: e,
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: cards,
                   ),
                 ],
               );
