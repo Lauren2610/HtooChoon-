@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Constants/plan_colors.dart';
-import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/logister_parent.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
           ),
         ],
       ),
-      home: const PlanSelectionScreen(role: "student"),
+      home: const LoginScreen(),
     );
   }
 }

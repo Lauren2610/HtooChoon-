@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:htoochoon_flutter/Providers/login_provider.dart';
+
 import 'package:htoochoon_flutter/Screens/AdminScreens/admin_home_parent.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/register_screen.dart';

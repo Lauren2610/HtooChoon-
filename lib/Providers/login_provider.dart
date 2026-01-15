@@ -1,88 +1,239 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
-  }
-
-  void _setError(String? message) {
-    _errorMessage = message;
-    notifyListeners();
-  }
-
-  /// ---------------- LOGIN ----------------
-  Future<void> login({required String email, required String password}) async {
-    try {
-      _setLoading(true);
-      _setError(null);
-
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
-    } on FirebaseAuthException catch (e) {
-      _setError(e.message);
-    } catch (e) {
-      _setError("Something went wrong");
-    } finally {
-      _setLoading(false);
+  bool isDisposed = false;
+  bool isLoading = false;
+  String? errormessage;
+  void safeChangeNotifier() {
+    if (!isDisposed) {
+      notifyListeners();
     }
   }
 
-  /// ---------------- REGISTER ----------------
-  Future<void> register({
-    required String email,
-    required String password,
-    required String role, // "volunteer" or "user"
-  }) async {
+  @override
+  void dispose() {
+    isDisposed = true;
+    super.dispose();
+  }
+
+  //GetToken
+  Future<void> getAuthToken() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = await user.getIdToken();
+      print("Firebase Auth Token: $token");
+      prefs.setString('authToken', token.toString());
+    } else {
+      print("No user is logged in.");
+    }
+  }
+
+  //FORGOT PASSWORD
+  Future<void> resetPassword(String email) async {
     try {
-      _setLoading(true);
-      _setError(null);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      print("Password reset email sent.");
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
-      UserCredential cred = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
+  Future<DocumentSnapshot> fetchUserDocument(String userId) async {
+    int attempts = 0;
+    DocumentSnapshot? userDoc;
+    while (attempts < 3) {
+      try {
+        userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get()
+            .timeout(Duration(seconds: 30));
+        if (userDoc.exists) {
+          return userDoc;
+        }
+      } catch (e) {
+        attempts++;
+        print("Attempt $attempts failed: $e");
+        if (attempts >= 3) {
+          rethrow;
+        }
+        await Future.delayed(Duration(seconds: 2));
+      }
+    }
+    return userDoc!;
+  }
 
-      await _firestore.collection("users").doc(cred.user!.uid).set({
-        "email": email.trim(),
-        "role": role,
-        "createdAt": FieldValue.serverTimestamp(),
+  Future<String?> loginWithEmail(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
+    try {
+      isLoading = true;
+      safeChangeNotifier();
+
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      final user = userCredential.user;
+      if (user == null) return null;
+
+      final userDoc = await fetchUserDocument(user.uid);
+      if (!userDoc.exists) {
+        throw Exception("User document not found");
+      }
+
+      final role = userDoc['role'] ?? 'user';
+      final plan = userDoc['plan'] ?? 'free';
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('role', role);
+      await prefs.setString('plan', plan);
+      await prefs.setString('userId', user.uid);
+      await prefs.setString('email', user.email ?? '');
+      await prefs.setBool('isLoggedIn', true);
+
+      if (role == 'org') {
+        if (plan == 'free') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => OrgCoreHome()),
+          );
+        }
+      } else {
+        // user
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
+        );
+      }
+
+      return role;
+    } catch (e) {
+      errormessage = e.toString();
+      isLoading = false;
+      safeChangeNotifier();
+      return null;
+    }
+  }
+
+  //TODO to navigate users and orgs
+  Future<void> registerUser(
+    BuildContext context,
+    String email,
+    String password,
+    String role,
+    String username,
+  ) async {
+    try {
+      isLoading = true;
+      safeChangeNotifier();
+
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      final user = userCredential.user;
+      if (user == null) return;
+
+      final defaultPlan = 'free';
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'email': email,
+        'role': role,
+        'plan': defaultPlan,
+        'username': username,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isActive': true,
       });
-    } on FirebaseAuthException catch (e) {
-      _setError(e.message);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('role', role);
+      await prefs.setString('plan', defaultPlan);
+      await prefs.setString('userId', user.uid);
+      await prefs.setString('username', username);
+      await prefs.setString('email', email);
+      await prefs.setBool('isLoggedIn', true);
+
+      isLoading = false;
+      safeChangeNotifier();
+
+      if (role == 'org') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => OrgCoreHome()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => FreeUserHome()),
+        );
+      }
     } catch (e) {
-      _setError("Something went wrong");
-    } finally {
-      _setLoading(false);
+      errormessage = e.toString();
+      isLoading = false;
+      safeChangeNotifier();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errormessage ?? "Sign up failed")));
     }
   }
 
-  /// ---------------- FETCH USER DOC ----------------
-  Future<DocumentSnapshot> fetchUserDocument(String uid) {
-    return _firestore.collection("users").doc(uid).get();
+  Future<void> logout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.remove('role');
+      prefs.remove('userId');
+      prefs.remove('email');
+      prefs.remove('isLoggedIn');
+      safeChangeNotifier();
+      print("User logged out.");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+      safeChangeNotifier();
+    } catch (e) {
+      print("Error logging out: $e");
+    }
   }
 
-  /// ---------------- LOGOUT ----------------
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
+  //Google
+  //
+  // Future<void> signInWithGoogle() async {
+  //   try {
+  //     GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+  //     if (googleUser == null) return;
+  //
+  //     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+  //     AuthCredential credential = GoogleAuthProvider.credential(
+  //       accessToken: googleAuth.accessToken,
+  //       idToken: googleAuth.idToken,
+  //     );
+  //
+  //     UserCredential userCredential = await FirebaseAuth.instance
+  //         .signInWithCredential(credential);
+  //     print("Google Sign-In Successful: ${userCredential.user!.email}");
+  //   } catch (e) {
+  //     print("Error: $e");
+  //     errormessage = e.toString();
+  //   }
+  // }
 }

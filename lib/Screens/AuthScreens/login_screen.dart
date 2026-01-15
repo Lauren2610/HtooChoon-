@@ -1,127 +1,230 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
+import 'package:provider/provider.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 900) {
-            // WEBDESKTOP VIEW (Split Screen)
-            return Row(
-              children: [
-                const Expanded(flex: 5, child: LeftSideForm()),
-                Expanded(flex: 5, child: RightSideVisual()),
-              ],
-            );
-          } else {
-            // MOBILE VIEW (Single Column)
-            return const Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: LeftSideForm(isMobile: true),
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => Scaffold(
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              // WEBDESKTOP VIEW (Split Screen)
+              return Row(
+                children: [
+                  const Expanded(flex: 5, child: AuthFormLeft()),
+                  Expanded(flex: 5, child: RightSideVisual()),
+                ],
+              );
+            } else {
+              // MOBILE VIEW (Single Column)
+              return const Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: AuthFormLeft(),
+                  ),
                 ),
-              ),
-            );
-          }
-        },
+              );
+            }
+          },
+        ),
       ),
     );
   }
 }
 
-// LEFT SIDE: The Login Form
-
-class LeftSideForm extends StatefulWidget {
-  final bool isMobile;
-  const LeftSideForm({super.key, this.isMobile = false});
+class AuthFormLeft extends StatefulWidget {
+  const AuthFormLeft({super.key});
 
   @override
-  State<LeftSideForm> createState() => _LeftSideFormState();
+  State<AuthFormLeft> createState() => _AuthFormLeftState();
 }
 
-class _LeftSideFormState extends State<LeftSideForm> {
-  bool isLogin = true; // toggle state
-  bool obscurePassword = true;
+class _AuthFormLeftState extends State<AuthFormLeft> {
+  bool isSignUp = false;
+  String selectedRole = 'user';
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _usernameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _usernameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: widget.isMobile ? 10 : 80.0,
-        vertical: 40,
-      ),
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => Column(
         children: [
-          if (!widget.isMobile) ...[const LogoWidget(), const Spacer()],
-          if (widget.isMobile) const Center(child: LogoWidget()),
-          if (widget.isMobile) const SizedBox(height: 40),
-
-          const Center(
-            child: Text(
-              "Student Portal",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          LoginToggleSwitch(
-            isLogin: isLogin,
-            onChanged: (value) {
-              setState(() => isLogin = value);
-            },
-          ),
-
-          const SizedBox(height: 30),
-
-          const CustomTextField(
-            label: "Student ID / Email",
-            icon: Icons.alternate_email_rounded,
-          ),
-
-          const SizedBox(height: 20),
-
-          CustomTextField(
-            label: "Password",
-            icon: Icons.lock_outline,
-            isPassword: true,
-            obscureText: obscurePassword,
-            onToggleVisibility: () {
-              setState(() => obscurePassword = !obscurePassword);
-            },
-          ),
-
-          const SizedBox(height: 30),
-
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PlanSelectionScreen(role: "student"),
-                  ),
-                );
-              },
-              child: Text(
-                isLogin ? "Login" : "Sign Up",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// TITLE
+                Text(
+                  isSignUp ? 'Create Account' : 'Welcome Back',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-              ),
+                const SizedBox(height: 8),
+
+                Text(
+                  isSignUp ? 'Sign up to get started' : 'Login to continue',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+
+                const SizedBox(height: 32),
+
+                /// LOGIN / SIGN UP TOGGLE
+                ToggleButtons(
+                  isSelected: [!isSignUp, isSignUp],
+                  onPressed: (index) {
+                    setState(() {
+                      isSignUp = index == 1;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text('Login'),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text('Sign Up'),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                /// USERNAME (SIGN UP ONLY)
+                if (isSignUp)
+                  TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                  ),
+
+                if (isSignUp) const SizedBox(height: 16),
+
+                /// EMAIL
+                TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                /// PASSWORD
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                ),
+
+                /// CONFIRM PASSWORD (SIGN UP ONLY)
+                if (isSignUp) const SizedBox(height: 16),
+
+                if (isSignUp)
+                  TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm Password',
+                      prefixIcon: Icon(Icons.lock_outline),
+                    ),
+                  ),
+
+                /// ROLE SELECTOR (SIGN UP ONLY)
+                if (isSignUp) const SizedBox(height: 16),
+
+                if (isSignUp)
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    decoration: const InputDecoration(
+                      labelText: 'Account Type',
+                      prefixIcon: Icon(Icons.school),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'user',
+                        child: Text('User (student/teacher/mentor)'),
+                      ),
+
+                      DropdownMenuItem(
+                        value: 'org',
+                        child: Text('Organization'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRole = value!;
+                      });
+                    },
+                  ),
+
+                const SizedBox(height: 32),
+
+                /// SUBMIT BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (isSignUp) {
+                        // SIGN UP LOGIC
+                        print('Username: ${_usernameController.text}');
+                        print('Email: ${_emailController.text}');
+                        print('Role: $selectedRole');
+                        loginProvider.registerUser(
+                          context,
+                          _emailController.text,
+                          _passwordController.text,
+                          selectedRole,
+                          _usernameController.text,
+                        );
+                      } else {
+                        // LOGIN LOGIC
+                        print('Login: ${_emailController.text}');
+                        loginProvider.loginWithEmail(
+                          context,
+                          _emailController.text,
+                          _passwordController.text,
+                        );
+                      }
+                    },
+                    child: Text(
+                      isSignUp ? 'Create Account' : 'Login',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
