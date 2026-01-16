@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -108,10 +111,17 @@ class LoginProvider extends ChangeNotifier {
             context,
             MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
           );
-        } else {
+        } else if (plan == 'super') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => OrgCoreHome()),
+            MaterialPageRoute(builder: (_) => OrgSuperHome()), // or onboarding
+          );
+        } else if (plan == 'plus') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrganizationPlusHome(),
+            ), // or onboarding
           );
         }
       } else {
@@ -149,6 +159,15 @@ class LoginProvider extends ChangeNotifier {
       final user = userCredential.user;
       if (user == null) return;
 
+      // String? checkPlan(String? role){
+      //   if(role == "user"){
+      //     return "free";
+      //   }
+      //   else {
+      //     return  "core";
+      //   }
+      //
+      // }
       final defaultPlan = 'free';
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -174,16 +193,17 @@ class LoginProvider extends ChangeNotifier {
       if (role == 'org') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => OrgCoreHome()),
+          MaterialPageRoute(builder: (_) => PlanSelectionScreen(role: "org")),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => FreeUserHome()),
+          MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
         );
       }
     } catch (e) {
       errormessage = e.toString();
+      print(errormessage);
       isLoading = false;
       safeChangeNotifier();
 
