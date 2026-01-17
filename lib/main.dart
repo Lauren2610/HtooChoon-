@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Constants/plan_colors.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
@@ -7,14 +8,22 @@ import 'package:htoochoon_flutter/Screens/AuthScreens/logister_parent.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 import 'package:htoochoon_flutter/Theme/theme_provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:htoochoon_flutter/firebase_options.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true);
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => LoginProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => LoginProvider()),
       ],
       child: const MyApp(),
     ),

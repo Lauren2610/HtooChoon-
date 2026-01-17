@@ -50,29 +50,32 @@ class LoginProvider extends ChangeNotifier {
     }
   }
 
-  Future<DocumentSnapshot> fetchUserDocument(String userId) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> fetchUserDocument(
+    String userId,
+  ) async {
     int attempts = 0;
-    DocumentSnapshot? userDoc;
+    DocumentSnapshot<Map<String, dynamic>>? userDoc;
+
     while (attempts < 3) {
       try {
         userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
-            .get()
-            .timeout(Duration(seconds: 30));
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 30));
+
         if (userDoc.exists) {
           return userDoc;
         }
       } catch (e) {
         attempts++;
         print("Attempt $attempts failed: $e");
-        if (attempts >= 3) {
-          rethrow;
-        }
-        await Future.delayed(Duration(seconds: 2));
+        if (attempts >= 3) rethrow;
+        await Future.delayed(const Duration(seconds: 2));
       }
     }
-    return userDoc!;
+
+    throw Exception("Failed to fetch user document");
   }
 
   Future<String?> loginWithEmail(
@@ -86,6 +89,7 @@ class LoginProvider extends ChangeNotifier {
 
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
+      await Future.delayed(const Duration(milliseconds: 400));
 
       final user = userCredential.user;
       if (user == null) return null;
@@ -201,15 +205,28 @@ class LoginProvider extends ChangeNotifier {
           MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
         );
       }
-    } catch (e) {
-      errormessage = e.toString();
-      print(errormessage);
+    } on FirebaseAuthException catch (e) {
       isLoading = false;
       safeChangeNotifier();
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(errormessage ?? "Sign up failed")));
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Auth error')));
+    } on FirebaseException catch (e) {
+      isLoading = false;
+      safeChangeNotifier();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Database error')));
+    } catch (e) {
+      isLoading = false;
+      safeChangeNotifier();
+
+      print("Unknown error: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
     }
   }
 

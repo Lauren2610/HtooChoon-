@@ -219,10 +219,12 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
                         );
                       }
                     },
-                    child: Text(
-                      isSignUp ? 'Create Account' : 'Login',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    child: loginProvider.isLoading
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            isSignUp ? 'Create Account' : 'Login',
+                            style: const TextStyle(fontSize: 16),
+                          ),
                   ),
                 ),
               ],
