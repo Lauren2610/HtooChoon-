@@ -1,39 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/TeacherScreens/free_teacher_home.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class StudentORTeacherPage extends StatelessWidget {
+class StudentORTeacherPage extends StatefulWidget {
   const StudentORTeacherPage({Key? key}) : super(key: key);
 
   @override
+  State<StudentORTeacherPage> createState() => _StudentORTeacherPageState();
+}
+
+class _StudentORTeacherPageState extends State<StudentORTeacherPage> {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            StudentOTeacherCard(
-              text: 'student',
-              icon: Icons.person,
-              ontap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => FreeStudentHome()),
-                );
-              },
-            ),
-            StudentOTeacherCard(
-              text: 'teacher',
-              icon: Icons.school,
-              ontap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => FreeTeacherHome()),
-                );
-              },
-            ),
-          ],
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => Scaffold(
+        body: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              StudentOTeacherCard(
+                text: 'student',
+                icon: Icons.person,
+                ontap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  String? userId = prefs.getString('userId');
+                  if (userId != null) {
+                    await loginProvider.updateUserType(
+                      userId,
+                      'student',
+                    ); // or 'teacher'
+                  }
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => FreeStudentHome()),
+                  );
+                },
+              ),
+              StudentOTeacherCard(
+                text: 'teacher',
+                icon: Icons.school,
+                ontap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  String? userId = prefs.getString('userId');
+                  if (userId != null) {
+                    await loginProvider.updateUserType(
+                      userId,
+                      'teacher',
+                    ); // or 'teacher'
+                  }
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => FreeStudentHome()),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Core Palette
+  //Core Palette
   static const granite = Color(0xFF3C493F);
   static const greyOlive = Color(0xFF7E8D85);
   static const ashGrey = Color(0xFFB3BFB8);

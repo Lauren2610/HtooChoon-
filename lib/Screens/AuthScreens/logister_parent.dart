@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/login_provider.dart';
 
 import 'package:htoochoon_flutter/Screens/AdminScreens/admin_home_parent.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
@@ -8,119 +9,134 @@ import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_upgrade_screen.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/TeacherScreens/free_teacher_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/apex_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/hyper_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-//
-// class LogisterParent extends StatefulWidget {
-//   const LogisterParent({Key? key}) : super(key: key);
-//
-//   @override
-//   State<LogisterParent> createState() => _LogisterParentState();
-// }
-//
-// class _LogisterParentState extends State<LogisterParent> {
-//   bool showLoginPage = true;
-//   late LoginProvider loginProvider;
-//
-//   @override
-//   void didChangeDependencies() {
-//     super.didChangeDependencies();
-//     loginProvider = context.read<LoginProvider>();
-//   }
-//
-//   void togglePage() {
-//     setState(() => showLoginPage = !showLoginPage);
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return StreamBuilder<User?>(
-//       stream: FirebaseAuth.instance.authStateChanges(),
-//       builder: (context, authSnapshot) {
-//         if (authSnapshot.connectionState == ConnectionState.waiting) {
-//           return const Scaffold(
-//             body: Center(child: CircularProgressIndicator()),
-//           );
-//         }
-//
-//         final user = authSnapshot.data;
-//
-//         if (user == null) {
-//           return showLoginPage
-//               ? LoginScreen(ontap: togglePage)
-//               : RegisterScreen(ontap: togglePage);
-//         }
-//
-//         return FutureBuilder<DocumentSnapshot>(
-//           future: loginProvider.fetchUserDocument(user.uid),
-//           builder: (context, userDocSnapshot) {
-//             if (userDocSnapshot.connectionState == ConnectionState.waiting) {
-//               return const Scaffold(
-//                 body: Center(child: CircularProgressIndicator()),
-//               );
-//             }
-//
-//             if (!userDocSnapshot.hasData || !userDocSnapshot.data!.exists) {
-//               return const Scaffold(
-//                 body: Center(child: Text("User data not found")),
-//               );
-//             }
-//
-//             final data = userDocSnapshot.data!.data() as Map<String, dynamic>;
-//
-//             final String role = data['role'];
-//             final String accountType =
-//                 data['accountType']; // user | organization
-//             final String plan = data['plan']; // free | hyper | apex
-//             final String? orgPlan = data['orgPlan']; // core | plus | super
-//
-//             // ---------------- ADMIN ----------------
-//             if (role == "admin") {
-//               return AdminHomeParent();
-//             }
-//
-//             // ---------------- ORGANIZATION ----------------
-//             if (accountType == "organization") {
-//               switch (orgPlan) {
-//                 case "core":
-//                   return OrgCoreHome();
-//                 case "plus":
-//                   return OrganizationPlusHome();
-//                 case "super":
-//                   return OrgSuperHome();
-//                 default:
-//                   return OrgUpgradeScreen();
-//               }
-//             }
-//
-//             // ---------------- NORMAL USER ----------------
-//             if (accountType == "user") {
-//               switch (plan) {
-//                 case "free": // Flow
-//                   return FreeUserHome(role: role);
-//
-//                 case "hyper": // Most Popular
-//                   return HyperUserHome(role: role);
-//
-//                 case "apex": // ACE
-//                   return ApexUserHome(role: role);
-//
-//                 default:
-//                   return PlanSelectionScreen(role: role);
-//               }
-//             }
-//
-//             return const Scaffold(
-//               body: Center(child: Text("Invalid account configuration")),
-//             );
-//           },
-//         );
-//       },
-//     );
-//   }
-// }
+class LogisterParent extends StatefulWidget {
+  const LogisterParent({Key? key}) : super(key: key);
+
+  @override
+  State<LogisterParent> createState() => _LogisterParentState();
+}
+
+class _LogisterParentState extends State<LogisterParent> {
+  bool showLoginPage = true;
+  late LoginProvider loginProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    loginProvider = Provider.of<LoginProvider>(context);
+  }
+
+  void togglePage() {
+    setState(() {
+      showLoginPage = !showLoginPage;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),
+          );
+        }
+
+        User? user = snapshot.data;
+
+        if (user != null) {
+          return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: loginProvider.fetchUserDocument(user.uid),
+            builder: (context, userDocSnapshot) {
+              if (userDocSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (userDocSnapshot.hasError || !userDocSnapshot.hasData) {
+                return Scaffold(
+                  body: Center(child: Text('Error loading user data')),
+                );
+              }
+
+              final data = userDocSnapshot.data?.data();
+              if (data == null) {
+                return Scaffold(
+                  body: Center(child: Text('User data not found')),
+                );
+              }
+
+              String role = data['role'] ?? 'user';
+              String plan = data['plan'] ?? 'free';
+              String? userType = data['userType'];
+
+              // Decide where to navigate
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (role == 'org') {
+                  if (plan == 'free') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => OrgCoreHome()),
+                    );
+                  } else if (plan == 'super') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => OrgSuperHome()),
+                    );
+                  } else if (plan == 'plus') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => OrganizationPlusHome()),
+                    );
+                  }
+                } else if (role == 'user') {
+                  if (userType == "student") {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => FreeStudentHome()),
+                    );
+                  } else if (userType == "teacher") {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => FreeTeacherHome()),
+                    );
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
+                    );
+                  }
+                }
+              });
+
+              // RETURN a temporary widget while navigating
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            },
+          );
+        } else {
+          return LoginScreen();
+        }
+      },
+    );
+  }
+}

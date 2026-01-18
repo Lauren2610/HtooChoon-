@@ -6,6 +6,8 @@ import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/apex_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
@@ -25,6 +27,20 @@ class LoginProvider extends ChangeNotifier {
   void dispose() {
     isDisposed = true;
     super.dispose();
+  }
+
+  Future<void> updateUserType(String userId, String userType) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'userType': userType,
+      });
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userType', userType);
+      print("User type updated to $userType");
+    } catch (e) {
+      print("Failed to update user type: $e");
+    }
   }
 
   //GetToken
@@ -107,7 +123,10 @@ class LoginProvider extends ChangeNotifier {
       await prefs.setString('plan', plan);
       await prefs.setString('userId', user.uid);
       await prefs.setString('email', user.email ?? '');
+
       await prefs.setBool('isLoggedIn', true);
+      print(role);
+      print(plan);
 
       if (role == 'org') {
         if (plan == 'free') {
@@ -128,12 +147,73 @@ class LoginProvider extends ChangeNotifier {
             ), // or onboarding
           );
         }
-      } else {
-        // user
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
-        );
+      } else if (role == 'user') {
+        if (role == "student") {
+          if (plan == 'free') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FreeStudentHome(),
+              ), // or onboarding
+            );
+          } else if (plan == 'super') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ApexUserHome(role: role),
+              ), // or onboarding
+            );
+          } else if (plan == 'plus') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrganizationPlusHome(),
+              ), // or onboarding
+            );
+          }
+        } else if (role == "mentor") {
+          if (plan == 'free') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
+            );
+          } else if (plan == 'super') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrgSuperHome(),
+              ), // or onboarding
+            );
+          } else if (plan == 'plus') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrganizationPlusHome(),
+              ), // or onboarding
+            );
+          }
+        } else if (role == "teacher") {
+          if (plan == 'free') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
+            );
+          } else if (plan == 'super') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrgSuperHome(),
+              ), // or onboarding
+            );
+          } else if (plan == 'plus') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrganizationPlusHome(),
+              ), // or onboarding
+            );
+          }
+        } else {}
       }
 
       return role;
@@ -145,7 +225,6 @@ class LoginProvider extends ChangeNotifier {
     }
   }
 
-  //TODO to navigate users and orgs
   Future<void> registerUser(
     BuildContext context,
     String email,
@@ -161,24 +240,18 @@ class LoginProvider extends ChangeNotifier {
           .createUserWithEmailAndPassword(email: email, password: password);
 
       final user = userCredential.user;
-      if (user == null) return;
+      if (user == null) {
+        throw Exception('User creation failed');
+      }
 
-      // String? checkPlan(String? role){
-      //   if(role == "user"){
-      //     return "free";
-      //   }
-      //   else {
-      //     return  "core";
-      //   }
-      //
-      // }
-      final defaultPlan = 'free';
+      const defaultPlan = 'free';
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'email': email,
         'role': role,
         'plan': defaultPlan,
         'username': username,
+        'userType': 'none',
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
       });
@@ -194,39 +267,52 @@ class LoginProvider extends ChangeNotifier {
       isLoading = false;
       safeChangeNotifier();
 
-      if (role == 'org') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => PlanSelectionScreen(role: "org")),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
-        );
-      }
+      // 🔐 SAFE navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+
+        if (role == 'org') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => PlanSelectionScreen(role: 'org')),
+          );
+        } else if (role == 'user') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
+          );
+        }
+      });
     } on FirebaseAuthException catch (e) {
       isLoading = false;
       safeChangeNotifier();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Auth error')));
-    } on FirebaseException catch (e) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Authentication error')),
+        );
+      });
+    } on FirebaseException {
       isLoading = false;
       safeChangeNotifier();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Database error')));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Database error')));
+      });
     } catch (e) {
       isLoading = false;
       safeChangeNotifier();
 
-      print("Unknown error: $e");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+      });
     }
   }
 
