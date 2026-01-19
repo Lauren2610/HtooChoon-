@@ -11,6 +11,9 @@ class ApexUserHome extends StatefulWidget {
 class _ApexUserHomeState extends State<ApexUserHome> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(title: Text("ApexUserHome")),
+      body: SafeArea(child: Column(children: [])),
+    );
   }
 }

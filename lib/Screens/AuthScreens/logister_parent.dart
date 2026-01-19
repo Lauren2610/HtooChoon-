@@ -9,8 +9,7 @@ import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_upgrade_screen.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/TeacherScreens/free_teacher_home.dart';
+
 import 'package:htoochoon_flutter/Screens/UserScreens/apex_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/hyper_user_home.dart';
@@ -108,15 +107,11 @@ class _LogisterParentState extends State<LogisterParent> {
                     );
                   }
                 } else if (role == 'user') {
-                  if (userType == "student") {
+                  if (userType == "student" || userType == "teacher") {
+                    //TODO
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => FreeStudentHome()),
-                    );
-                  } else if (userType == "teacher") {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => FreeTeacherHome()),
+                      MaterialPageRoute(builder: (_) => FreeUserHome()),
                     );
                   } else {
                     Navigator.pushReplacement(

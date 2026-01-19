@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/TeacherScreens/free_teacher_home.dart';
+
+import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,7 +37,7 @@ class _StudentORTeacherPageState extends State<StudentORTeacherPage> {
 
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => FreeStudentHome()),
+                    MaterialPageRoute(builder: (context) => FreeUserHome()),
                   );
                 },
               ),
@@ -56,7 +56,7 @@ class _StudentORTeacherPageState extends State<StudentORTeacherPage> {
 
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => FreeStudentHome()),
+                    MaterialPageRoute(builder: (context) => FreeUserHome()),
                   );
                 },
               ),

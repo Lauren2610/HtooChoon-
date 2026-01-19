@@ -6,9 +6,10 @@ import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/StudentScreens/free_student_home.dart';
+
 import 'package:htoochoon_flutter/Screens/UserScreens/apex_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
+import 'package:htoochoon_flutter/Screens/UserScreens/hyper_user_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -148,72 +149,26 @@ class LoginProvider extends ChangeNotifier {
           );
         }
       } else if (role == 'user') {
-        if (role == "student") {
-          if (plan == 'free') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FreeStudentHome(),
-              ), // or onboarding
-            );
-          } else if (plan == 'super') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ApexUserHome(role: role),
-              ), // or onboarding
-            );
-          } else if (plan == 'plus') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrganizationPlusHome(),
-              ), // or onboarding
-            );
-          }
-        } else if (role == "mentor") {
-          if (plan == 'free') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
-            );
-          } else if (plan == 'super') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrgSuperHome(),
-              ), // or onboarding
-            );
-          } else if (plan == 'plus') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrganizationPlusHome(),
-              ), // or onboarding
-            );
-          }
-        } else if (role == "teacher") {
-          if (plan == 'free') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => OrgCoreHome()), // or onboarding
-            );
-          } else if (plan == 'super') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrgSuperHome(),
-              ), // or onboarding
-            );
-          } else if (plan == 'plus') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrganizationPlusHome(),
-              ), // or onboarding
-            );
-          }
-        } else {}
+        if (plan == 'free') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => FreeUserHome()), // or onboarding
+          );
+        } else if (plan == 'apex') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ApexUserHome(role: "student"),
+            ), // or onboarding
+          );
+        } else if (plan == 'hyper') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HyperUserHome(role: "student"),
+            ), // or onboarding
+          );
+        }
       }
 
       return role;
