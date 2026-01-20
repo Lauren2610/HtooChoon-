@@ -191,82 +191,86 @@ class LoginProvider extends ChangeNotifier {
       isLoading = true;
       safeChangeNotifier();
 
+      debugPrint('REGISTER START → role=$role');
+
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
 
       final user = userCredential.user;
-      if (user == null) {
-        throw Exception('User creation failed');
-      }
+      if (user == null) throw Exception('User creation failed');
 
       const defaultPlan = 'free';
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'email': email,
         'role': role,
+        'userType': role == 'user' ? 'none' : null,
         'plan': defaultPlan,
         'username': username,
-        'userType': 'none',
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
       });
 
+      debugPrint('USER DOC CREATED');
+
+      if (role.trim() == 'org') {
+        debugPrint('CREATING ORGANIZATION DOC');
+
+        await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(user.uid)
+            .set({
+              'ownerId': user.uid,
+              'name': username,
+              'email': email,
+              'plan': defaultPlan,
+              'createdAt': FieldValue.serverTimestamp(),
+              'isActive': true,
+            });
+
+        debugPrint('ORGANIZATION DOC CREATED');
+      } else {
+        debugPrint('SKIPPED ORG CREATION');
+      }
+
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', user.uid);
+      await prefs.setString('email', email);
       await prefs.setString('role', role);
       await prefs.setString('plan', defaultPlan);
-      await prefs.setString('userId', user.uid);
-      await prefs.setString('username', username);
-      await prefs.setString('email', email);
       await prefs.setBool('isLoggedIn', true);
 
       isLoading = false;
       safeChangeNotifier();
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+      if (!context.mounted) return;
 
-        if (role == 'org') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => PlanSelectionScreen(role: 'org')),
-          );
-        } else if (role == 'user') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => StudentORTeacherPage()),
-          );
-        }
-      });
-    } on FirebaseAuthException catch (e) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => role == 'org'
+              ? PlanSelectionScreen(role: 'org')
+              : StudentORTeacherPage(),
+        ),
+      );
+    } on FirebaseException catch (e) {
       isLoading = false;
       safeChangeNotifier();
+      debugPrint('FIRESTORE ERROR → ${e.message}');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Authentication error')),
-        );
-      });
-    } on FirebaseException {
-      isLoading = false;
-      safeChangeNotifier();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Database error')));
-      });
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Firestore error')));
     } catch (e) {
       isLoading = false;
       safeChangeNotifier();
+      debugPrint('GENERAL ERROR → $e');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
-      });
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
     }
   }
 
@@ -274,21 +278,17 @@ class LoginProvider extends ChangeNotifier {
     try {
       await FirebaseAuth.instance.signOut();
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.remove('role');
-      prefs.remove('userId');
-      prefs.remove('email');
-      prefs.remove('isLoggedIn');
-      safeChangeNotifier();
-      print("User logged out.");
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (!context.mounted) return;
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (_) => LoginScreen()),
       );
-      safeChangeNotifier();
     } catch (e) {
-      print("Error logging out: $e");
+      debugPrint("Logout error: $e");
     }
   }
 

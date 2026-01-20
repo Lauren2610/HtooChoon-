@@ -90,25 +90,14 @@ class _LogisterParentState extends State<LogisterParent> {
               // Decide where to navigate
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (role == 'org') {
-                  if (plan == 'free') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => OrgCoreHome()),
-                    );
-                  } else if (plan == 'super') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => OrgSuperHome()),
-                    );
-                  } else if (plan == 'plus') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => OrganizationPlusHome()),
-                    );
-                  }
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlanSelectionScreen(role: "org"),
+                    ),
+                  );
                 } else if (role == 'user') {
                   if (userType == "student" || userType == "teacher") {
-                    //TODO
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => FreeUserHome()),

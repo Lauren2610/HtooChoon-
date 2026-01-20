@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Constants/plan_colors.dart';
 import 'package:htoochoon_flutter/Constants/text_constants.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:flutter/material.dart';
 
 class PlanSelectionScreen extends StatelessWidget {
   final String role;
+
   const PlanSelectionScreen({super.key, required this.role});
 
   @override
@@ -18,62 +20,129 @@ class PlanSelectionScreen extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              const double spacing = 16;
-              const int cardCount = 3;
+          child: (role == "org")
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    const double spacing = 16;
+                    const int cardCount = 3;
 
-              final totalSpacing = spacing * (cardCount - 1);
+                    final totalSpacing = spacing * (cardCount - 1);
 
-              final double cardWidth =
-                  (constraints.maxWidth - totalSpacing) / cardCount;
+                    final double cardWidth =
+                        (constraints.maxWidth - totalSpacing) / cardCount;
 
-              final cards = [
-                PlanCard(
-                  width: cardWidth,
-                  title: "Basic",
-                  price: "\$0",
-                  cardColor: planColors.basic,
-                  bulletColor: Theme.of(context).colorScheme.primary,
-                ),
-                PlanCard(
-                  width: cardWidth,
-                  title: "Pro",
-                  price: "\$29",
-                  cardColor: planColors.pro,
-                  bulletColor: Theme.of(context).colorScheme.primary,
-                ),
-                PlanCard(
-                  width: cardWidth,
-                  title: "Premium",
-                  price: "\$61",
-                  cardColor: planColors.premium,
-                  bulletColor: Colors.white,
-                  textColor: Colors.white,
-                ),
-              ];
-
-              return Column(
-                children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => FreeUserHome()),
+                    final cards = [
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Core",
+                        price: "\$0",
+                        cardColor: planColors.basic,
+                        bulletColor: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: cards,
-                  ),
-                ],
-              );
-            },
-          ),
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Super",
+                        price: "\$29",
+                        cardColor: planColors.pro,
+                        bulletColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Plus",
+                        price: "\$61",
+                        cardColor: planColors.premium,
+                        bulletColor: Colors.white,
+                        textColor: Colors.white,
+                      ),
+                    ];
+
+                    return Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              if (role == 'org') {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => OrgCoreHome(),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: cards,
+                        ),
+                      ],
+                    );
+                  },
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    const double spacing = 16;
+                    const int cardCount = 3;
+
+                    final totalSpacing = spacing * (cardCount - 1);
+
+                    final double cardWidth =
+                        (constraints.maxWidth - totalSpacing) / cardCount;
+
+                    final cards = [
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Basic",
+                        price: "\$0",
+                        cardColor: planColors.basic,
+                        bulletColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Pro",
+                        price: "\$29",
+                        cardColor: planColors.pro,
+                        bulletColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      PlanCard(
+                        width: cardWidth,
+                        title: "Premium",
+                        price: "\$61",
+                        cardColor: planColors.premium,
+                        bulletColor: Colors.white,
+                        textColor: Colors.white,
+                      ),
+                    ];
+
+                    return Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FreeUserHome(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: cards,
+                        ),
+                      ],
+                    );
+                  },
+                ),
         ),
       ),
     );
