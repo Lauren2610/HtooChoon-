@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
+import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'OrgWidgets/org_dashboard_widgets.dart';
 
@@ -15,7 +15,6 @@ class MainDashboardWrapper extends StatefulWidget {
 
 class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
   int _selectedIndex = 0;
-  bool _isDarkMode = false;
 
   final List<Widget> _pages = [
     const OrgDashboardScreen(),
@@ -27,6 +26,7 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
   @override
   Widget build(BuildContext context) {
     bool isExtended = MediaQuery.of(context).size.width > 900;
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       body: Row(
@@ -77,7 +77,7 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
                 const Divider(height: 1),
 
                 // 3. Footer Section (Profile, Theme, Settings, Logout)
-                _buildSidebarFooter(isExtended),
+                _buildSidebarFooter(isExtended, themeProvider),
               ],
             ),
           ),
@@ -113,7 +113,7 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
     );
   }
 
-  Widget _buildSidebarFooter(bool isExtended) {
+  Widget _buildSidebarFooter(bool isExtended, ThemeProvider themeProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -121,15 +121,15 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
           // Light/Dark Toggle
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(_isDarkMode ? Icons.dark_mode : Icons.light_mode),
+            leading: Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
             title: isExtended ? const Text("Theme") : null,
             trailing: isExtended
                 ? Switch(
-                    value: _isDarkMode,
-                    onChanged: (val) => setState(() => _isDarkMode = val),
+                    value: themeProvider.isDarkMode,
+                    onChanged: (val) => themeProvider.toggleTheme(),
                   )
                 : null,
-            onTap: () => setState(() => _isDarkMode = !_isDarkMode),
+            onTap: () => themeProvider.toggleTheme(),
           ),
 
           // Settings
@@ -194,8 +194,18 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
           const SizedBox(height: 12),
 
           _buildFooterItem(
+            Icons.exit_to_app,
+            "Exit Organization",
+            isExtended,
+            () => Provider.of<OrgProvider>(context, listen: false).leaveOrganization(),
+            color: Colors.orange,
+          ),
+
+          const SizedBox(height: 8),
+
+          _buildFooterItem(
             Icons.logout,
-            "Logout",
+            "Log Out of App",
             isExtended,
             () => _handleLogout(),
             color: Colors.redAccent,
@@ -222,7 +232,9 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
 
   void _showProfileMenu(BuildContext context) {}
 
-  void _handleLogout() {}
+  void _handleLogout() {
+    Provider.of<LoginProvider>(context, listen: false).logout(context);
+  }
 }
 
 class OrgDashboardScreen extends StatefulWidget {
@@ -238,7 +250,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
     final orgProvider = Provider.of<OrgProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Row(
         children: [
           Expanded(
@@ -316,16 +328,20 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
         margin: const EdgeInsets.only(right: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(color: Colors.grey[600])),
+            Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
             const SizedBox(height: 8),
             Text(
               count,
@@ -348,20 +364,27 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: 160,
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: Colors.teal),
+            Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 12),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
       ),

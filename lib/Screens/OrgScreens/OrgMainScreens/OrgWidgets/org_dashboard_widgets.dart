@@ -20,11 +20,11 @@ void showCreateProgramDialog(BuildContext context, OrgProvider provider) {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -43,72 +43,63 @@ void showCreateProgramDialog(BuildContext context, OrgProvider provider) {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Create New Program",
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       IconButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        icon: const Icon(Icons.close, color: Colors.grey),
+                        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Group your courses into a high-level program like 'Pre-GED' or 'Computer Science'.",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14),
                   ),
                   const SizedBox(height: 24),
 
                   // Program Name Field
-                  const Text(
+                  Text(
                     "Program Name",
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: nameController,
                     validator: (v) => v!.isEmpty ? "Name is required" : null,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: "e.g. Computer Science Department",
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   // Description Field
-                  const Text(
+                  Text(
                     "Description",
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: descController,
                     maxLines: 3,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: "What is this program about?",
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -118,14 +109,6 @@ void showCreateProgramDialog(BuildContext context, OrgProvider provider) {
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       onPressed: () async {
                         if (formKey.currentState!.validate()) {
                           try {

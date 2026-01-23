@@ -1,67 +1,76 @@
 import 'package:flutter/material.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
-  const ForgotPasswordPage({Key? key}) : super(key: key);
+  const ForgotPasswordPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // title: Text("Forgot Password"),
-        foregroundColor: Theme.of(context).colorScheme.background,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: const Text("Forgot Password"),
+        centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 70),
+              const SizedBox(height: 60),
               Text(
-                "Forgot Password?",
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
+                "Reset Password",
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF111827),
+                    ),
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 12),
               Text(
-                "Sorry :( We're currently working on this You can contact to the developer!",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
+                "Enter your email address and we'll send you a link to reset your password.",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF6B7280),
+                    ),
               ),
-              SizedBox(height: 30),
-              // TextField(
-              //   decoration: InputDecoration(
-              //     labelText: 'Email',
-              //     hintText: "ngtharkyaw2520@gmail.com",
-              //     hintStyle: TextStyle(color: Colors.grey),
-              //     border: OutlineInputBorder(
-              //       borderRadius: BorderRadius.circular(8),
-              //     ),
-              //   ),
-              // ),
-              SizedBox(height: 20),
-              TextButton(
-                // style: ElevatedButton.styleFrom(
-                //   backgroundColor: Colors.red.shade900,
-                //   padding: EdgeInsets.symmetric(vertical: 12),
-                //   shape: RoundedRectangleBorder(
-                //     borderRadius: BorderRadius.circular(8),
-                //   ),
-                // ),
-                onPressed: () {},
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    'Update Password',
+              const SizedBox(height: 40),
+              const TextFormField(
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: "example@email.com",
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: Implement reset logic
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Reset link sent! (Simulated)"),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Reset Password',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Back to Login",
+                    style: TextStyle(
+                      color: Color(0xFF4D7CFE),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

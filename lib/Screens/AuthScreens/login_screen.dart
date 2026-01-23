@@ -1,10 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -27,12 +22,7 @@ class LoginScreen extends StatelessWidget {
             } else {
               // MOBILE VIEW (Single Column)
               return const Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: AuthFormLeft(),
-                  ),
-                ),
+                child: AuthFormLeft(),
               );
             }
           },
@@ -51,8 +41,10 @@ class AuthFormLeft extends StatefulWidget {
 
 class _AuthFormLeftState extends State<AuthFormLeft> {
   bool isSignUp = false;
-  String selectedRole = 'user';
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -70,167 +62,211 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
   @override
   Widget build(BuildContext context) {
     return Consumer<LoginProvider>(
-      builder: (context, loginProvider, child) => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// TITLE
-                Text(
-                  isSignUp ? 'Create Account' : 'Welcome Back',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
+      builder: (context, loginProvider, child) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const LogoWidget(),
+              const SizedBox(height: 48),
 
-                Text(
-                  isSignUp ? 'Sign up to get started' : 'Login to continue',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+              /// TITLE
+              Text(
+                isSignUp ? 'Create Account' : 'Welcome Back',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF111827),
+                    ),
+              ),
+              const SizedBox(height: 8),
 
-                const SizedBox(height: 32),
+              Text(
+                isSignUp
+                    ? 'Sign up to start your learning journey'
+                    : 'Login to continue your progress',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF6B7280),
+                    ),
+              ),
 
-                /// LOGIN / SIGN UP TOGGLE
-                ToggleButtons(
-                  isSelected: [!isSignUp, isSignUp],
-                  onPressed: (index) {
+              const SizedBox(height: 32),
+
+              /// LOGIN / SIGN UP TOGGLE
+              Center(
+                child: LoginToggleSwitch(
+                  isLogin: !isSignUp,
+                  onChanged: (val) {
                     setState(() {
-                      isSignUp = index == 1;
+                      isSignUp = !val;
+                      _formKey.currentState?.reset();
                     });
                   },
-                  borderRadius: BorderRadius.circular(10),
-                  children: const [
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Text('Login'),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Text('Sign Up'),
-                    ),
-                  ],
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-                /// USERNAME (SIGN UP ONLY)
-                if (isSignUp)
-                  TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                  ),
-
-                if (isSignUp) const SizedBox(height: 16),
-
-                /// EMAIL
-                TextField(
-                  controller: _emailController,
+              /// USERNAME (SIGN UP ONLY)
+              if (isSignUp) ...[
+                TextFormField(
+                  controller: _usernameController,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
+                    labelText: 'Username',
+                    hintText: 'Choose a unique username',
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a username';
+                    }
+                    if (value.length < 3) {
+                      return 'Username must be at least 3 characters';
+                    }
+                    return null;
+                  },
                 ),
+                const SizedBox(height: 20),
+              ],
 
-                const SizedBox(height: 16),
-
-                /// PASSWORD
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
+              /// EMAIL
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Enter your email address',
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                      .hasMatch(value)) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
 
-                /// CONFIRM PASSWORD (SIGN UP ONLY)
-                if (isSignUp) const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-                if (isSignUp)
-                  TextField(
-                    controller: _confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm Password',
-                      prefixIcon: Icon(Icons.lock_outline),
+              /// PASSWORD
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  hintText: 'Enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
-                  ),
-
-                /// ROLE SELECTOR (SIGN UP ONLY)
-                if (isSignUp) const SizedBox(height: 16),
-
-                if (isSignUp)
-                  DropdownButtonFormField<String>(
-                    value: selectedRole,
-                    decoration: const InputDecoration(
-                      labelText: 'Account Type',
-                      prefixIcon: Icon(Icons.school),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'user',
-                        child: Text('User (student/teacher/mentor)'),
-                      ),
-
-                      DropdownMenuItem(
-                        value: 'org',
-                        child: Text('Organization'),
-                      ),
-                    ],
-                    onChanged: (value) {
+                    onPressed: () {
                       setState(() {
-                        selectedRole = value!;
+                        _obscurePassword = !_obscurePassword;
                       });
                     },
                   ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
 
-                const SizedBox(height: 32),
-
-                /// SUBMIT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (isSignUp) {
-                        // SIGN UP LOGIC
-                        print('Username: ${_usernameController.text}');
-                        print('Email: ${_emailController.text}');
-                        print('Role: $selectedRole');
-                        loginProvider.registerUser(
-                          context,
-                          _emailController.text,
-                          _passwordController.text,
-                          selectedRole,
-                          _usernameController.text,
-                        );
-                      } else {
-                        // LOGIN LOGIC
-                        print('Login: ${_emailController.text}');
-                        loginProvider.loginWithEmail(
-                          context,
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                      }
-                    },
-                    child: loginProvider.isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            isSignUp ? 'Create Account' : 'Login',
-                            style: const TextStyle(fontSize: 16),
-                          ),
+              /// CONFIRM PASSWORD (SIGN UP ONLY)
+              if (isSignUp) ...[
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    hintText: 'Repeat your password',
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
                 ),
               ],
-            ),
+
+              /// SUBMIT BUTTON
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: loginProvider.isLoading
+                      ? null
+                      : () {
+                          if (_formKey.currentState!.validate()) {
+                            if (isSignUp) {
+                              loginProvider.registerUser(
+                                context,
+                                _emailController.text,
+                                _passwordController.text,
+                                _usernameController.text,
+                              );
+                            } else {
+                              loginProvider.loginWithEmail(
+                                context,
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                            }
+                          }
+                        },
+                  child: loginProvider.isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          isSignUp ? 'Create Account' : 'Login',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -383,50 +419,6 @@ class LoginToggleSwitch extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomTextField extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isPassword;
-  final bool obscureText;
-  final VoidCallback? onToggleVisibility;
-
-  const CustomTextField({
-    super.key,
-    required this.label,
-    required this.icon,
-    this.isPassword = false,
-    this.obscureText = false,
-    this.onToggleVisibility,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        obscureText: isPassword ? obscureText : false,
-        decoration: InputDecoration(
-          icon: Icon(icon),
-          labelText: label,
-          border: InputBorder.none,
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: onToggleVisibility,
-                )
-              : null,
         ),
       ),
     );

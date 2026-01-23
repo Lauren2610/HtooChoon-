@@ -5,16 +5,22 @@ import 'package:flutter/material.dart';
 class OrgProvider extends ChangeNotifier {
   bool isDisposed = false;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  // ignore: unused_field
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? _currentOrgId;
+  String? _currentOrgName;
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
   String? get currentOrgId => _currentOrgId;
+  String? get currentOrgName => _currentOrgName;
+  
   String? _role;
-
   String? get role => _role;
+
+  List<Map<String, dynamic>> _userOrgs = [];
+  List<Map<String, dynamic>> get userOrgs => _userOrgs;
 
   Future<void> initializeApp() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -24,30 +30,166 @@ class OrgProvider extends ChangeNotifier {
       return;
     }
 
+    // Try to load last active org or default to personal view
+    // For now, we just fetch available orgs
+    await fetchUserOrgs();
+  }
+
+  // Create a new Organization
+  Future<void> createOrganization(String name, String plan) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      _isLoading = true;
+      notifyListeners();
 
-      if (userDoc.exists) {
-        _role = userDoc['role'];
+      DocumentReference orgRef = await _db.collection('organizations').add({
+        'name': name,
+        'ownerId': user.uid,
+        'plan': plan, // 'free', 'plus', 'super'
+        'createdAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
 
-        if (_role == 'org') {
-          _currentOrgId = userDoc['orgId'];
-        }
-      }
-    } catch (e) {
-      debugPrint("Init Error: $e");
-    } finally {
+      // Add user as OWNER member of this org
+      await orgRef.collection('members').doc(user.uid).set({
+        'uid': user.uid,
+        'role': 'owner', // Creator is owner
+        'email': user.email,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Switch to this new org context immediately
+      await switchOrganization(orgRef.id, name, 'owner');
+
+      // Refresh org list
+      await fetchUserOrgs();
+
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
   }
 
-  Future<void> initAdmin(String orgId) async {
+  Future<void> fetchUserOrgs() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // Facebook-style query: Find memberships across all organizations
+      // This requires a collectionGroup index on 'members' in Firestore
+      final memberships = await _db
+          .collectionGroup('members')
+          .where('uid', isEqualTo: user.uid)
+          .get();
+
+      List<Map<String, dynamic>> orgs = [];
+
+      for (var memberDoc in memberships.docs) {
+        // The parent of 'members/uid' is 'members', its parent is 'organizations/orgId'
+        final orgRef = memberDoc.reference.parent.parent;
+        if (orgRef != null) {
+          final orgDoc = await orgRef.get();
+          if (orgDoc.exists) {
+            orgs.add({
+              'id': orgDoc.id,
+              'name': orgDoc.get('name') ?? 'Unnamed Organization',
+              'role': memberDoc.get('role') ?? 'student',
+              'joinedAt': memberDoc.get('joinedAt'),
+            });
+          }
+        }
+      }
+
+      _userOrgs = orgs;
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint("Error fetching orgs: $e");
+    }
+  }
+
+  Future<void> switchOrganization(String orgId, String name, String role) async {
     _currentOrgId = orgId;
+    _currentOrgName = name;
+    _role = role;
     notifyListeners();
+  }
+
+  Future<void> leaveOrganization() async {
+    _currentOrgId = null;
+    _currentOrgName = null;
+    _role = null;
+    notifyListeners();
+  }
+
+  /// Invite a user to the current organization
+  Future<void> inviteMember(String email, String role) async {
+    if (_currentOrgId == null) return;
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // 1. Find user by email
+      final userQuery = await _db
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (userQuery.docs.isEmpty) {
+        throw Exception("User with email $email not found");
+      }
+
+      final userId = userQuery.docs.first.id;
+
+      // 2. Add to members subcollection
+      await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .doc(userId)
+          .set({
+        'uid': userId,
+        'role': role,
+        'email': email,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'status': 'active', // Should ideally be invited/pending
+      });
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Fetch members of the current organization
+  Future<List<Map<String, dynamic>>> fetchOrgMembers() async {
+    if (_currentOrgId == null) return [];
+    try {
+      final query = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .get();
+
+      return query.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      debugPrint("Error fetching members: $e");
+      return [];
+    }
   }
 
   // --- 1. Program Management ---
@@ -236,18 +378,6 @@ class OrgProvider extends ChangeNotifier {
         .collection('invites')
         .add({'email': email, 'role': 'teacher', 'status': 'pending'});
   }
-
-  //TODO create courses like edx (DRAFT → READY → LIVE → COMPLETED → ARCHIVED) but only live learning sessions and recordings
-
-  //TODO create programs (GED/ CS) / courses then classes
-
-  //TODO request teachers to work on their orgnisaton
-
-  //TODO invite students to study in their orgnisaton or accept the request to be their students
-
-  //TODO to make the  a exam form
-
-  //TODO create live learning sessions for students and teachers which include CV/AI from hugging face model cheat detection by expression /looking at phone/ tab moves (admin can turn on and turn off cheat detection during class since students might need to check pdf files or find something in google)
 
   void safeChangeNotifier() {
     if (!isDisposed) {

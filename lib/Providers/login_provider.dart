@@ -1,23 +1,17 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
-import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_core_home.dart';
-import 'package:htoochoon_flutter/Screens/OrgScreens/org_super_home.dart';
-import 'package:htoochoon_flutter/Screens/OrgScreens/organization_plus_home.dart';
-
-import 'package:htoochoon_flutter/Screens/UserScreens/apex_user_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/free_user_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/hyper_user_home.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/plan_selection_screen.dart';
-import 'package:htoochoon_flutter/Screens/UserScreens/student_o_teacher.dart';
+import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginProvider extends ChangeNotifier {
   bool isDisposed = false;
   bool isLoading = false;
   String? errormessage;
+
   void safeChangeNotifier() {
     if (!isDisposed) {
       notifyListeners();
@@ -95,7 +89,7 @@ class LoginProvider extends ChangeNotifier {
     throw Exception("Failed to fetch user document");
   }
 
-  Future<String?> loginWithEmail(
+  Future<void> loginWithEmail(
     BuildContext context,
     String email,
     String password,
@@ -106,94 +100,72 @@ class LoginProvider extends ChangeNotifier {
 
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      final user = userCredential.user;
-      if (user == null) return null;
-
-      final userDoc = await fetchUserDocument(user.uid);
-      if (!userDoc.exists) {
-        throw Exception("User document not found");
-      }
-
-      final role = userDoc['role'] ?? 'user';
-      final plan = userDoc['plan'] ?? 'free';
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('role', role);
-      await prefs.setString('plan', plan);
-      await prefs.setString('userId', user.uid);
-      await prefs.setString('email', user.email ?? '');
-
-      await prefs.setBool('isLoggedIn', true);
-      print(role);
-      print(plan);
-
-      if (role == 'org') {
-        if (plan == 'free') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MainDashboardWrapper(),
-            ), // or onboarding
-          );
-        } else if (plan == 'super') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => OrgSuperHome()), // or onboarding
-          );
-        } else if (plan == 'plus') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OrganizationPlusHome(),
-            ), // or onboarding
-          );
-        }
-      } else if (role == 'user') {
-        if (plan == 'free') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => FreeUserHome()), // or onboarding
-          );
-        } else if (plan == 'apex') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ApexUserHome(role: "student"),
-            ), // or onboarding
-          );
-        } else if (plan == 'hyper') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => HyperUserHome(role: "student"),
-            ), // or onboarding
-          );
-        }
-      }
-
-      return role;
+      await _handleAuthSuccess(context, userCredential.user);
     } catch (e) {
-      errormessage = e.toString();
-      isLoading = false;
-      safeChangeNotifier();
-      return null;
+      _handleAuthError(context, e);
     }
   }
 
+  // Future<void> signInWithGoogle(BuildContext context) async {
+  //   try {
+  //     isLoading = true;
+  //     safeChangeNotifier();
+  //
+  //     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+  //     if (googleUser == null) {
+  //       isLoading = false;
+  //       safeChangeNotifier();
+  //       return; // User canceled
+  //     }
+  //
+  //     final GoogleSignInAuthentication googleAuth =
+  //         await googleUser.authentication;
+  //     final AuthCredential credential = GoogleAuthProvider.credential(
+  //       accessToken: googleAuth.accessToken,
+  //       idToken: googleAuth.idToken,
+  //     );
+  //
+  //     final UserCredential userCredential = await FirebaseAuth.instance
+  //         .signInWithCredential(credential);
+  //     final user = userCredential.user;
+  //
+  //     if (user != null) {
+  //       // Check if user doc exists, if not create it (Google Sign Up implicit)
+  //       final userDoc = await FirebaseFirestore.instance
+  //           .collection('users')
+  //           .doc(user.uid)
+  //           .get();
+  //
+  //       if (!userDoc.exists) {
+  //         await _createUserDocument(user, user.displayName ?? 'User');
+  //       }
+  //     }
+  //
+  //     await _handleAuthSuccess(context, user);
+  //   } catch (e) {
+  //     _handleAuthError(context, e);
+  //   }
+  // }
+  //
   Future<void> registerUser(
     BuildContext context,
     String email,
     String password,
-    String role,
     String username,
   ) async {
     try {
       isLoading = true;
       safeChangeNotifier();
 
-      debugPrint('REGISTER START → role=$role');
+      // 1. Check if username already exists
+      final usernameCheck = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+
+      if (usernameCheck.docs.isNotEmpty) {
+        throw Exception('Username already taken. Please choose another one.');
+      }
 
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
@@ -201,84 +173,77 @@ class LoginProvider extends ChangeNotifier {
       final user = userCredential.user;
       if (user == null) throw Exception('User creation failed');
 
-      const defaultPlan = 'free';
-
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'email': email,
-        'role': role,
-        'userType': role == 'user' ? 'none' : null,
-        'plan': defaultPlan,
-        'username': username,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isActive': true,
-      });
-
-      debugPrint('USER DOC CREATED');
-
-      if (role.trim() == 'org') {
-        debugPrint('CREATING ORGANIZATION DOC');
-
-        await FirebaseFirestore.instance
-            .collection('organizations')
-            .doc(user.uid)
-            .set({
-              'ownerId': user.uid,
-              'name': username,
-              'email': email,
-              'plan': defaultPlan,
-              'createdAt': FieldValue.serverTimestamp(),
-              'isActive': true,
-            });
-
-        debugPrint('ORGANIZATION DOC CREATED');
-      } else {
-        debugPrint('SKIPPED ORG CREATION');
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', user.uid);
-      await prefs.setString('email', email);
-      await prefs.setString('role', role);
-      await prefs.setString('plan', defaultPlan);
-      await prefs.setBool('isLoggedIn', true);
-
-      isLoading = false;
-      safeChangeNotifier();
-
-      if (!context.mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => role == 'org'
-              ? PlanSelectionScreen(role: 'org')
-              : StudentORTeacherPage(),
-        ),
-      );
-    } on FirebaseException catch (e) {
-      isLoading = false;
-      safeChangeNotifier();
-      debugPrint('FIRESTORE ERROR → ${e.message}');
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Firestore error')));
+      await _createUserDocument(user, username);
+      
+      await _handleAuthSuccess(context, user);
     } catch (e) {
-      isLoading = false;
-      safeChangeNotifier();
-      debugPrint('GENERAL ERROR → $e');
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+      _handleAuthError(context, e);
+      print(e);
     }
+  }
+
+  Future<void> _createUserDocument(User user, String username) async {
+    const defaultPlan = 'free';
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'email': user.email,
+      'role': 'user', // Default is just user
+      'userType': 'none',
+      'plan': defaultPlan,
+      'username': username,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isActive': true,
+    });
+
+    debugPrint('USER DOC CREATED for ${user.uid}');
+  }
+
+  Future<void> _handleAuthSuccess(BuildContext context, User? user) async {
+    if (user == null) return;
+
+    final userDoc = await fetchUserDocument(user.uid);
+    if (!userDoc.exists) {
+      throw Exception("User document not found");
+    }
+
+    final role = userDoc['role'] ?? 'user';
+    final plan = userDoc['plan'] ?? 'free';
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('role', role);
+    await prefs.setString('plan', plan);
+    await prefs.setString('userId', user.uid);
+    await prefs.setString('email', user.email ?? '');
+    await prefs.setBool('isLoggedIn', true);
+
+    isLoading = false;
+    safeChangeNotifier();
+
+    if (!context.mounted) return;
+
+    // UNIFIED ROUTE: Everyone goes to MainScaffold
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainScaffold()),
+    );
+  }
+
+  void _handleAuthError(BuildContext context, Object e) {
+    errormessage = e.toString();
+    isLoading = false;
+    safeChangeNotifier();
+    debugPrint('AUTH ERROR → $e');
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
   }
 
   Future<void> logout(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
+      // await GoogleSignIn().signOut(); // Ensure Google Sign out too
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
@@ -293,26 +258,4 @@ class LoginProvider extends ChangeNotifier {
       debugPrint("Logout error: $e");
     }
   }
-
-  //Google
-  //
-  // Future<void> signInWithGoogle() async {
-  //   try {
-  //     GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-  //     if (googleUser == null) return;
-  //
-  //     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-  //     AuthCredential credential = GoogleAuthProvider.credential(
-  //       accessToken: googleAuth.accessToken,
-  //       idToken: googleAuth.idToken,
-  //     );
-  //
-  //     UserCredential userCredential = await FirebaseAuth.instance
-  //         .signInWithCredential(credential);
-  //     print("Google Sign-In Successful: ${userCredential.user!.email}");
-  //   } catch (e) {
-  //     print("Error: $e");
-  //     errormessage = e.toString();
-  //   }
-  // }
 }

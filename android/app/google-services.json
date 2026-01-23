@@ -29,6 +29,13 @@
             {
               "client_id": "182356452628-jhn9idcb538iuai7psho02po1eaughe1.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "182356452628-gcecqb6l1djghfm3ad4d8a0ftnq9d2tc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.htoochoonFlutter"
+              }
             }
           ]
         }
