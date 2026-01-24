@@ -42,7 +42,7 @@ class NotificatonProvider extends ChangeNotifier {
   Future<void> inviteUser({
     required String orgId,
     required String email,
-    required String role, // "student" or "teacher"
+    required String role,
     required String title,
     required String body,
   }) async {
