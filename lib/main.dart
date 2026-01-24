@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/Providers/notificaton_provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Providers/user_provider.dart';
 import 'package:htoochoon_flutter/Providers/structure_provider.dart';
@@ -19,8 +20,9 @@ import 'package:shared_preferences/shared_preferences.dart'; // New
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseFirestore.instance.settings =
-      const Settings(persistenceEnabled: true);
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
 
   runApp(
     MultiProvider(
@@ -30,13 +32,16 @@ void main() async {
         ChangeNotifierProvider(create: (context) => UserProvider()), // New
         ChangeNotifierProvider(create: (context) => OrgProvider()),
         ChangeNotifierProvider(create: (context) => StructureProvider()), // New
-        ChangeNotifierProvider(create: (context) => SubscriptionProvider()), // New
+        ChangeNotifierProvider(
+          create: (context) => SubscriptionProvider(),
+        ), // New
+
+        ChangeNotifierProvider(create: (context) => NotificatonProvider()),
       ],
       child: const MyApp(),
     ),
   );
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -50,7 +55,9 @@ class MyApp extends StatelessWidget {
           title: 'HtooChoon',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: themeProvider.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light,
           home: const AuthWrapper(),
         );
       },
@@ -64,7 +71,6 @@ class AuthWrapper extends StatefulWidget {
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
-
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isInit = false;
@@ -87,17 +93,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          // User is logged in. 
-          
+          // User is logged in.
+
           // 1. Fetch User Data (ONCE)
           if (!_isInit) {
             _isInit = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-               Provider.of<UserProvider>(context, listen: false).fetchUser();
+              Provider.of<UserProvider>(context, listen: false).fetchUser();
             });
           }
 
@@ -105,8 +113,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return FutureBuilder<bool>(
             future: _onboardingCheck,
             builder: (context, onboardingSnapshot) {
-              if (onboardingSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              if (onboardingSnapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
               }
 
               final hasSeenOnboarding = onboardingSnapshot.data ?? false;
@@ -114,12 +125,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
               if (!hasSeenOnboarding) {
                 return const OnboardingScreen();
               }
-              
+
               // 3. Main App Flow
               return Consumer<UserProvider>(
                 builder: (context, userProvider, child) {
                   if (userProvider.isLoading) {
-                     return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
                   }
                   return const MainScaffold();
                 },
@@ -134,4 +147,3 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
-

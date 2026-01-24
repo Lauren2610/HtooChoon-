@@ -6,10 +6,7 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Forgot Password"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Forgot Password"), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40.0),
@@ -20,19 +17,19 @@ class ForgotPasswordPage extends StatelessWidget {
               Text(
                 "Reset Password",
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF111827),
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF111827),
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 "Enter your email address and we'll send you a link to reset your password.",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7280),
-                    ),
+                  color: const Color(0xFF6B7280),
+                ),
               ),
               const SizedBox(height: 40),
-              const TextFormField(
+              TextFormField(
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email',
@@ -55,10 +52,7 @@ class ForgotPasswordPage extends StatelessWidget {
                   },
                   child: const Text(
                     'Reset Password',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

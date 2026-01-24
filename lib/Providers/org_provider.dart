@@ -83,29 +83,57 @@ class OrgProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Facebook-style query: Find memberships across all organizations
-      // This requires a collectionGroup index on 'members' in Firestore
-      final memberships = await _db
-          .collectionGroup('members')
-          .where('uid', isEqualTo: user.uid)
-          .get();
-
       List<Map<String, dynamic>> orgs = [];
 
-      for (var memberDoc in memberships.docs) {
-        // The parent of 'members/uid' is 'members', its parent is 'organizations/orgId'
-        final orgRef = memberDoc.reference.parent.parent;
-        if (orgRef != null) {
-          final orgDoc = await orgRef.get();
-          if (orgDoc.exists) {
-            orgs.add({
-              'id': orgDoc.id,
-              'name': orgDoc.get('name') ?? 'Unnamed Organization',
-              'role': memberDoc.get('role') ?? 'student',
-              'joinedAt': memberDoc.get('joinedAt'),
-            });
+      // WORKAROUND: First, fetch organizations where user is the owner
+      // This doesn't require a collectionGroup index
+      final ownedOrgs = await _db
+          .collection('organizations')
+          .where('ownerId', isEqualTo: user.uid)
+          .get();
+
+      for (var orgDoc in ownedOrgs.docs) {
+        orgs.add({
+          'id': orgDoc.id,
+          'name': orgDoc.get('name') ?? 'Unnamed Organization',
+          'role': 'owner',
+          'joinedAt': orgDoc.get('createdAt'),
+        });
+      }
+
+      // OPTIONAL: Try to fetch memberships via collectionGroup
+      // This will fail if the index doesn't exist, but we'll catch the error
+      try {
+        final memberships = await _db
+            .collectionGroup('members')
+            .where('uid', isEqualTo: user.uid)
+            .get();
+
+        for (var memberDoc in memberships.docs) {
+          final orgRef = memberDoc.reference.parent.parent;
+          if (orgRef != null) {
+            final orgDoc = await orgRef.get();
+            if (orgDoc.exists) {
+              // Check if we already have this org (from owned orgs)
+              final existingOrg = orgs.firstWhere(
+                (org) => org['id'] == orgDoc.id,
+                orElse: () => <String, dynamic>{},
+              );
+              
+              if (existingOrg.isEmpty) {
+                orgs.add({
+                  'id': orgDoc.id,
+                  'name': orgDoc.get('name') ?? 'Unnamed Organization',
+                  'role': memberDoc.get('role') ?? 'student',
+                  'joinedAt': memberDoc.get('joinedAt'),
+                });
+              }
+            }
           }
         }
+      } catch (indexError) {
+        debugPrint("CollectionGroup query failed (index may not exist): $indexError");
+        debugPrint("Showing only owned organizations for now.");
       }
 
       _userOrgs = orgs;

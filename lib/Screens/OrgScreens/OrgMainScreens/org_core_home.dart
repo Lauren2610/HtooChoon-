@@ -121,7 +121,9 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
           // Light/Dark Toggle
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+            leading: Icon(
+              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            ),
             title: isExtended ? const Text("Theme") : null,
             trailing: isExtended
                 ? Switch(
@@ -197,19 +199,22 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
             Icons.exit_to_app,
             "Exit Organization",
             isExtended,
-            () => Provider.of<OrgProvider>(context, listen: false).leaveOrganization(),
+            () => Provider.of<OrgProvider>(
+              context,
+              listen: false,
+            ).leaveOrganization(),
             color: Colors.orange,
           ),
 
           const SizedBox(height: 8),
-
-          _buildFooterItem(
-            Icons.logout,
-            "Log Out of App",
-            isExtended,
-            () => _handleLogout(),
-            color: Colors.redAccent,
-          ),
+          //
+          // _buildFooterItem(
+          //   Icons.logout,
+          //   "Log Out of App",
+          //   isExtended,
+          //   () => _handleLogout(),
+          //   color: Colors.redAccent,
+          // ),
         ],
       ),
     );
@@ -330,10 +335,14 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05,
+              ),
               blurRadius: 10,
             ),
           ],
@@ -341,7 +350,12 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+            Text(
+              title,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               count,
@@ -371,7 +385,9 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

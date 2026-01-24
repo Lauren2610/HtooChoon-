@@ -174,7 +174,7 @@ class LoginProvider extends ChangeNotifier {
       if (user == null) throw Exception('User creation failed');
 
       await _createUserDocument(user, username);
-      
+
       await _handleAuthSuccess(context, user);
     } catch (e) {
       _handleAuthError(context, e);

@@ -21,9 +21,7 @@ class LoginScreen extends StatelessWidget {
               );
             } else {
               // MOBILE VIEW (Single Column)
-              return const Center(
-                child: AuthFormLeft(),
-              );
+              return const Center(child: AuthFormLeft());
             }
           },
         ),
@@ -77,9 +75,9 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
               Text(
                 isSignUp ? 'Create Account' : 'Welcome Back',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF111827),
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF111827),
+                ),
               ),
               const SizedBox(height: 8),
 
@@ -88,8 +86,8 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
                     ? 'Sign up to start your learning journey'
                     : 'Login to continue your progress',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7280),
-                    ),
+                  color: const Color(0xFF6B7280),
+                ),
               ),
 
               const SizedBox(height: 32),
@@ -144,8 +142,9 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value)) {
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
                     return 'Please enter a valid email address';
                   }
                   return null;
@@ -222,46 +221,49 @@ class _AuthFormLeftState extends State<AuthFormLeft> {
               ],
 
               /// SUBMIT BUTTON
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: loginProvider.isLoading
-                      ? null
-                      : () {
-                          if (_formKey.currentState!.validate()) {
-                            if (isSignUp) {
-                              loginProvider.registerUser(
-                                context,
-                                _emailController.text,
-                                _passwordController.text,
-                                _usernameController.text,
-                              );
-                            } else {
-                              loginProvider.loginWithEmail(
-                                context,
-                                _emailController.text,
-                                _passwordController.text,
-                              );
+              Padding(
+                padding: const EdgeInsets.only(top: 30),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: loginProvider.isLoading
+                        ? null
+                        : () {
+                            if (_formKey.currentState!.validate()) {
+                              if (isSignUp) {
+                                loginProvider.registerUser(
+                                  context,
+                                  _emailController.text,
+                                  _passwordController.text,
+                                  _usernameController.text,
+                                );
+                              } else {
+                                loginProvider.loginWithEmail(
+                                  context,
+                                  _emailController.text,
+                                  _passwordController.text,
+                                );
+                              }
                             }
-                          }
-                        },
-                  child: loginProvider.isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                          },
+                    child: loginProvider.isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isSignUp ? 'Create Account' : 'Login',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      : Text(
-                          isSignUp ? 'Create Account' : 'Login',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  ),
                 ),
               ),
             ],
@@ -307,6 +309,7 @@ class RightSideVisual extends StatelessWidget {
                   ),
                   fit: BoxFit.contain,
                 ),
+
                 // Soft shadow for depth
                 boxShadow: [
                   BoxShadow(
