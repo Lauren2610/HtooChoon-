@@ -15,7 +15,7 @@ class OrgProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get currentOrgId => _currentOrgId;
   String? get currentOrgName => _currentOrgName;
-  
+
   String? _role;
   String? get role => _role;
 
@@ -119,7 +119,7 @@ class OrgProvider extends ChangeNotifier {
                 (org) => org['id'] == orgDoc.id,
                 orElse: () => <String, dynamic>{},
               );
-              
+
               if (existingOrg.isEmpty) {
                 orgs.add({
                   'id': orgDoc.id,
@@ -132,7 +132,9 @@ class OrgProvider extends ChangeNotifier {
           }
         }
       } catch (indexError) {
-        debugPrint("CollectionGroup query failed (index may not exist): $indexError");
+        debugPrint(
+          "CollectionGroup query failed (index may not exist): $indexError",
+        );
         debugPrint("Showing only owned organizations for now.");
       }
 
@@ -146,7 +148,11 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> switchOrganization(String orgId, String name, String role) async {
+  Future<void> switchOrganization(
+    String orgId,
+    String name,
+    String role,
+  ) async {
     _currentOrgId = orgId;
     _currentOrgName = name;
     _role = role;
@@ -161,13 +167,19 @@ class OrgProvider extends ChangeNotifier {
   }
 
   /// Invite a user to the current organization
-  Future<void> inviteMember(String email, String role) async {
+  Future<void> inviteMember(
+    String email,
+    String role, {
+    required String title,
+    required String body,
+  }) async {
     if (_currentOrgId == null) return;
+
     try {
       _isLoading = true;
       notifyListeners();
 
-      // 1. Find user by email
+      // Check if user exists
       final userQuery = await _db
           .collection('users')
           .where('email', isEqualTo: email)
@@ -175,28 +187,25 @@ class OrgProvider extends ChangeNotifier {
           .get();
 
       if (userQuery.docs.isEmpty) {
+        print("user isnot exist");
         throw Exception("User with email $email not found");
       }
 
-      final userId = userQuery.docs.first.id;
-
-      // 2. Add to members subcollection
-      await _db
-          .collection('organizations')
-          .doc(_currentOrgId)
-          .collection('members')
-          .doc(userId)
-          .set({
-        'uid': userId,
-        'role': role,
+      await _db.collection('invitations').add({
+        'orgId': _currentOrgId,
         'email': email,
-        'joinedAt': FieldValue.serverTimestamp(),
-        'status': 'active', // Should ideally be invited/pending
+        'role': role,
+        'title': title,
+        'body': body,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
       });
+      print("created");
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      print("no ");
       _isLoading = false;
       notifyListeners();
       rethrow;

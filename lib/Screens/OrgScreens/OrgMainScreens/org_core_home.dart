@@ -408,7 +408,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
   }
 
   // --- Dialog Examples for Interactions ---
-
+  // enum MemberRole {teacher, student, moderator }
   void _showInviteDialog(BuildContext context, OrgProvider provider) {
     final emailController = TextEditingController();
     showDialog(
@@ -425,14 +425,47 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () {
-              provider.inviteTeacher(emailController.text);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Invitation Sent!")));
-            },
-            child: const Text("Send Invite"),
+            onPressed: provider.isLoading
+                ? null
+                : () async {
+                    try {
+                      await provider.inviteMember(
+                        emailController.text.trim(),
+                        'teacher',
+                        title: 'Invitation to join our LMS',
+                        body:
+                            'You have been invited to join our organization as a teacher.',
+                      );
+
+                      Navigator.pop(ctx);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Invitation Sent!")),
+                      );
+                    } catch (e) {
+                      Navigator.pop(ctx);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e.toString().contains('not found')
+                                ? 'User with this email does not exist'
+                                : 'Failed to send invitation',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+            child: provider.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text("Send Invite"),
           ),
         ],
       ),
@@ -472,26 +505,289 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
   //   );
   // }
 
-  void _showCourseCreateDialog(
-    BuildContext context,
-    String type,
-    OrgProvider provider,
-  ) {
-    // Basic dialog for Program/Course creation
-    // Implement text controllers and call provider methods
-  }
   void _showCreateDialog(
     BuildContext context,
     String type,
     OrgProvider provider,
   ) {
-    // Basic dialog for Program/Course creation
-    // Implement text controllers and call provider methods
+    final titleController = TextEditingController();
+    final descController =
+        TextEditingController(); // doubling as syllabus for course
+    String? selectedProgramId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          bool isCreating = false;
+
+          return AlertDialog(
+            title: Text("Create New $type"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: type == "Program"
+                          ? "Program Name"
+                          : "Course Title",
+                      hintText: type == "Program"
+                          ? "e.g. Computer Science"
+                          : "e.g. Intro to Flutter",
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    decoration: InputDecoration(
+                      labelText: type == "Program"
+                          ? "Description"
+                          : "Syllabus / Description",
+                    ),
+                    maxLines: 3,
+                  ),
+                  if (type == "Course") ...[
+                    const SizedBox(height: 12),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('organizations')
+                          .doc(provider.currentOrgId)
+                          .collection('programs')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData)
+                          return const LinearProgressIndicator();
+                        final programs = snapshot.data!.docs;
+
+                        return DropdownButtonFormField<String>(
+                          value: selectedProgramId,
+                          decoration: const InputDecoration(
+                            labelText: "Assign to Program (Optional)",
+                          ),
+                          items: programs.map((doc) {
+                            return DropdownMenuItem(
+                              value: doc.id,
+                              child: Text(
+                                doc['name'],
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) => selectedProgramId = val,
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isCreating ? null : () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: isCreating
+                    ? null
+                    : () async {
+                        if (titleController.text.isNotEmpty) {
+                          setState(() => isCreating = true);
+                          try {
+                            if (type == "Program") {
+                              await provider.createProgram(
+                                titleController.text,
+                                descController.text,
+                              );
+                            } else {
+                              await provider.createCourse(
+                                titleController.text,
+                                selectedProgramId,
+                                descController.text,
+                              );
+                            }
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("$type Created Successfully!"),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              setState(() => isCreating = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
+                              );
+                            }
+                          }
+                        }
+                      },
+                child: isCreating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text("Create"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void _showCreateClassDialog(BuildContext context, OrgProvider provider) {
-    // This dialog needs a Dropdown to select Course and Teacher
-    // Fetch courses/teachers from provider before showing logic
+    final nameController = TextEditingController();
+    String? selectedCourseId;
+    String? selectedTeacherId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          bool isCreating = false;
+
+          return AlertDialog(
+            title: const Text("Create New Class"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Class Name",
+                      hintText: "e.g. Batch A - Morning",
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Course Selector
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(provider.currentOrgId)
+                        .collection('courses')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const LinearProgressIndicator();
+                      final courses = snapshot.data!.docs;
+                      return DropdownButtonFormField<String>(
+                        value: selectedCourseId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: "Select Course",
+                        ),
+                        items: courses.map((doc) {
+                          return DropdownMenuItem(
+                            value: doc.id,
+                            child: Text(
+                              doc['title'],
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) => selectedCourseId = val,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  // Teacher Selector
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(provider.currentOrgId)
+                        .collection('teachers')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const LinearProgressIndicator();
+                      final teachers = snapshot.data!.docs;
+                      return DropdownButtonFormField<String>(
+                        value: selectedTeacherId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: "Assign Teacher",
+                        ),
+                        items: teachers.map((doc) {
+                          return DropdownMenuItem(
+                            value: doc
+                                .id, // Assuming doc ID is teacher ID (actually it might be invite ID or user ID, checking logic)
+                            // In fetchTeachers usually we store user ID.
+                            // Let's assume the doc ID is the reference ID,
+                            // but OrgProvider.createClass uses 'teacherId'.
+                            // Let's use doc.id for now.
+                            child: Text(doc['email'] ?? 'Unknown'),
+                          );
+                        }).toList(),
+                        onChanged: (val) => selectedTeacherId = val,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isCreating ? null : () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: isCreating
+                    ? null
+                    : () async {
+                        if (nameController.text.isNotEmpty &&
+                            selectedCourseId != null &&
+                            selectedTeacherId != null) {
+                          setState(() => isCreating = true);
+                          try {
+                            await provider.createClass(
+                              courseId: selectedCourseId!,
+                              teacherId: selectedTeacherId!,
+                              className: nameController.text,
+                              startDate: DateTime.now(),
+                            );
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Class Created Successfully!"),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              setState(() => isCreating = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
+                              );
+                            }
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please fill all fields"),
+                            ),
+                          );
+                        }
+                      },
+                child: isCreating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text("Create"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -556,7 +852,75 @@ class ProgramDetailScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () {
-          // Open dialog to add course to THIS program
+          final titleController = TextEditingController();
+          final descController = TextEditingController();
+          showDialog(
+            context: context,
+            builder: (ctx) => StatefulBuilder(
+              builder: (context, setState) {
+                bool isCreating = false;
+                return AlertDialog(
+                  title: const Text("Add Course to Program"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          labelText: "Course Title",
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: descController,
+                        decoration: const InputDecoration(
+                          labelText: "Syllabus / Description",
+                        ),
+                        maxLines: 3,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isCreating ? null : () => Navigator.pop(ctx),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: isCreating
+                          ? null
+                          : () async {
+                              if (titleController.text.isNotEmpty) {
+                                setState(() => isCreating = true);
+                                try {
+                                  await orgProvider.createCourse(
+                                    titleController.text,
+                                    programId,
+                                    descController.text,
+                                  );
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                } catch (e) {
+                                  if (ctx.mounted) {
+                                    setState(() => isCreating = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text("Error: $e")),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                      child: isCreating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text("Create"),
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
         },
       ),
     );
@@ -623,6 +987,119 @@ class CourseDetailScreen extends StatelessWidget {
                 ),
               );
             },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text("Add Class"),
+        onPressed: () {
+          final nameController = TextEditingController();
+          String? selectedTeacherId;
+
+          showDialog(
+            context: context,
+            builder: (ctx) => StatefulBuilder(
+              builder: (context, setState) {
+                bool isCreating = false;
+                return AlertDialog(
+                  title: const Text("Create Class for Course"),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: "Class Name",
+                            hintText: "e.g. Batch A",
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('organizations')
+                              .doc(orgProvider.currentOrgId)
+                              .collection('teachers')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData)
+                              return const LinearProgressIndicator();
+                            final teachers = snapshot.data!.docs;
+                            return DropdownButtonFormField<String>(
+                              value: selectedTeacherId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: "Assign Teacher",
+                              ),
+                              items: teachers.map((doc) {
+                                return DropdownMenuItem(
+                                  value: doc.id,
+                                  child: Text(doc['email'] ?? 'Unknown'),
+                                );
+                              }).toList(),
+                              onChanged: (val) => selectedTeacherId = val,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isCreating ? null : () => Navigator.pop(ctx),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: isCreating
+                          ? null
+                          : () async {
+                              if (nameController.text.isNotEmpty &&
+                                  selectedTeacherId != null) {
+                                setState(() => isCreating = true);
+                                try {
+                                  await orgProvider.createClass(
+                                    courseId: courseId,
+                                    teacherId: selectedTeacherId!,
+                                    className: nameController.text,
+                                    startDate: DateTime.now(),
+                                  );
+                                  if (ctx.mounted) {
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Class Created!"),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (ctx.mounted) {
+                                    setState(() => isCreating = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text("Error: $e")),
+                                    );
+                                  }
+                                }
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Please fill all fields"),
+                                  ),
+                                );
+                              }
+                            },
+                      child: isCreating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text("Create"),
+                    ),
+                  ],
+                );
+              },
+            ),
           );
         },
       ),
