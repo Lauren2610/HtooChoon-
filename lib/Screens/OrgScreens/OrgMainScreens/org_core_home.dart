@@ -518,7 +518,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (sbContext, setState) {
           bool isCreating = false;
 
           return AlertDialog(
@@ -648,7 +648,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (sbContext, setState) {
           bool isCreating = false;
 
           return AlertDialog(
@@ -857,7 +857,7 @@ class ProgramDetailScreen extends StatelessWidget {
           showDialog(
             context: context,
             builder: (ctx) => StatefulBuilder(
-              builder: (context, setState) {
+              builder: (sbContext, setState) {
                 bool isCreating = false;
                 return AlertDialog(
                   title: const Text("Add Course to Program"),
@@ -1000,7 +1000,7 @@ class CourseDetailScreen extends StatelessWidget {
           showDialog(
             context: context,
             builder: (ctx) => StatefulBuilder(
-              builder: (context, setState) {
+              builder: (sbContext, setState) {
                 bool isCreating = false;
                 return AlertDialog(
                   title: const Text("Create Class for Course"),
@@ -1322,7 +1322,7 @@ class _LiveSessionsTab extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (sbContext, setState) {
           return AlertDialog(
             title: const Text("Schedule Live Class"),
             content: Column(

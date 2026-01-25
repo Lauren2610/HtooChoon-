@@ -137,7 +137,7 @@ class OrgProvider extends ChangeNotifier {
         );
         debugPrint("Showing only owned organizations for now.");
       }
-
+      print("fetched owned orgs");
       _userOrgs = orgs;
       _isLoading = false;
       notifyListeners();
@@ -188,6 +188,8 @@ class OrgProvider extends ChangeNotifier {
 
       if (userQuery.docs.isEmpty) {
         print("user isnot exist");
+        print('Current org id $_currentOrgId');
+
         throw Exception("User with email $email not found");
       }
 
