@@ -155,7 +155,7 @@ class OrgProvider extends ChangeNotifier {
         );
         debugPrint("Showing only owned organizations for now.");
       }
-      print("fetched owned orgs");
+
       _userOrgs = orgs;
       _isLoading = false;
       notifyListeners();
@@ -248,6 +248,7 @@ class OrgProvider extends ChangeNotifier {
   }
 
   Stream<QuerySnapshot> fetchOrgInvitations({required String status}) {
+    print("fetching org invitations $_currentOrgId");
     return _db
         .collection('organizations')
         .doc(_currentOrgId)
