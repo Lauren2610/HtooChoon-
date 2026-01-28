@@ -559,9 +559,17 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
     OrgProvider provider,
   ) {
     final titleController = TextEditingController();
-    final descController =
-        TextEditingController(); // doubling as syllabus for course
+    final descController = TextEditingController();
     String? selectedProgramId;
+
+    final List<String> allCategories = [
+      'Computer Science',
+      'Math',
+      'Architecture',
+      'Design',
+      'Business',
+    ];
+    List<String> selectedCategories = [];
 
     showDialog(
       context: context,
@@ -575,6 +583,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Title
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
@@ -587,6 +596,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
                   TextField(
                     controller: descController,
                     decoration: InputDecoration(
@@ -596,8 +606,11 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
                     ),
                     maxLines: 3,
                   ),
+
                   if (type == "Course") ...[
                     const SizedBox(height: 12),
+
+                    //Program dropdown
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('organizations')
@@ -623,53 +636,99 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
                               ),
                             );
                           }).toList(),
-                          onChanged: (val) => selectedProgramId = val,
+                          onChanged: (val) =>
+                              setState(() => selectedProgramId = val),
                         );
                       },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    //Categories selection
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Select Categories",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      children: allCategories.map((cat) {
+                        final isSelected = selectedCategories.contains(cat);
+                        return FilterChip(
+                          label: Text(cat),
+                          selected: isSelected,
+                          onSelected: (_) {
+                            setState(() {
+                              if (isSelected) {
+                                selectedCategories.remove(cat);
+                              } else {
+                                selectedCategories.add(cat);
+                              }
+                            });
+                          },
+                          selectedColor: Theme.of(context).colorScheme.primary,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ],
               ),
             ),
             actions: [
+              // Cancel Button
               TextButton(
                 onPressed: isCreating ? null : () => Navigator.pop(ctx),
                 child: const Text("Cancel"),
               ),
+
+              // Create Button
               ElevatedButton(
                 onPressed: isCreating
                     ? null
                     : () async {
-                        if (titleController.text.isNotEmpty) {
-                          setState(() => isCreating = true);
-                          try {
-                            if (type == "Program") {
-                              await provider.createProgram(
-                                titleController.text,
-                                descController.text,
-                              );
-                            } else {
-                              await provider.createCourse(
-                                titleController.text,
-                                selectedProgramId,
-                                descController.text,
-                              );
-                            }
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("$type Created Successfully!"),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (ctx.mounted) {
-                              setState(() => isCreating = false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Error: $e")),
-                              );
-                            }
+                        if (titleController.text.isEmpty) return;
+
+                        setState(() => isCreating = true);
+
+                        try {
+                          if (type == "Program") {
+                            await provider.createProgram(
+                              titleController.text.trim(),
+                              descController.text.trim(),
+                            );
+                          } else {
+                            await provider.createCourse(
+                              titleController.text.trim(),
+                              selectedProgramId,
+                              descController.text.trim(),
+                              categories: selectedCategories,
+                            );
+                          }
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("$type Created Successfully!"),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            setState(() => isCreating = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
                           }
                         }
                       },

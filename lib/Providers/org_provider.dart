@@ -310,13 +310,14 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  // --- 2. Course Management (Lifecycle: Draft -> Ready -> Live) ---
   Future<void> createCourse(
     String title,
     String? programId,
-    String syllabus,
-  ) async {
+    String syllabus, {
+    List<String>? categories, // NEW
+  }) async {
     if (_currentOrgId == null) return;
+
     try {
       await _db
           .collection('organizations')
@@ -326,7 +327,8 @@ class OrgProvider extends ChangeNotifier {
             'title': title,
             'programId': programId,
             'syllabus': syllabus,
-            'status': 'DRAFT', // Default status
+            'categories': categories ?? [],
+            'status': 'DRAFT',
             'createdAt': FieldValue.serverTimestamp(),
           });
     } catch (e) {
