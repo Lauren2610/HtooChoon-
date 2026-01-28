@@ -7,7 +7,10 @@ class OrgProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   // ignore: unused_field
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  List<Map<String, dynamic>> _teachers = [];
+  List<Map<String, dynamic>> get teachers => _teachers;
+  List<Map<String, dynamic>> _students = [];
+  List<Map<String, dynamic>> get students => _students;
   String? _currentOrgId;
   String? _currentUserId;
   String? _currentOrgName;
@@ -36,17 +39,14 @@ class OrgProvider extends ChangeNotifier {
       return;
     }
 
-    // ✅ SET CURRENT USER ID
     _currentUserId = firebaseUser.uid;
 
-    // Optional but recommended
     final userDoc = await _db.collection('users').doc(_currentUserId).get();
 
     if (userDoc.exists) {
       _role = userDoc.data()?['role'];
     }
 
-    // Fetch orgs user belongs to
     await fetchUserOrgs();
 
     _isLoading = false;
@@ -105,6 +105,7 @@ class OrgProvider extends ChangeNotifier {
 
       // WORKAROUND: First, fetch organizations where user is the owner
       // This doesn't require a collectionGroup index
+      //Todo add different screen where the user is a mod or a teacher
       final ownedOrgs = await _db
           .collection('organizations')
           .where('ownerId', isEqualTo: user.uid)
@@ -239,10 +240,10 @@ class OrgProvider extends ChangeNotifier {
           });
 
       _isLoading = false;
-      notifyListeners();
+      safeChangeNotifier();
     } catch (e) {
       _isLoading = false;
-      notifyListeners();
+      safeChangeNotifier();
       rethrow;
     }
   }
@@ -282,23 +283,6 @@ class OrgProvider extends ChangeNotifier {
         .where('email', isEqualTo: email)
         .where('status', isEqualTo: 'pending')
         .snapshots();
-  }
-
-  /// Fetch members of the current organization
-  Future<List<Map<String, dynamic>>> fetchOrgMembers() async {
-    if (_currentOrgId == null) return [];
-    try {
-      final query = await _db
-          .collection('organizations')
-          .doc(_currentOrgId)
-          .collection('members')
-          .get();
-
-      return query.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
-      debugPrint("Error fetching members: $e");
-      return [];
-    }
   }
 
   // --- 1. Program Management ---
@@ -486,6 +470,57 @@ class OrgProvider extends ChangeNotifier {
         .doc(_currentOrgId)
         .collection('invites')
         .add({'email': email, 'role': 'teacher', 'status': 'pending'});
+  }
+
+  /// Fetch members of the current organization
+  Future<List<Map<String, dynamic>>> fetchOrgMembers() async {
+    if (_currentOrgId == null) return [];
+    try {
+      final query = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .get();
+
+      return query.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      debugPrint("Error fetching members: $e");
+      return [];
+    }
+  }
+
+  /// Teacher Filter Screen
+  Future<void> fetchTeacher(String orgId) async {
+    final snapshot = await _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('members')
+        .where('role', isEqualTo: 'teacher')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    _teachers = snapshot.docs.map((doc) {
+      return {'id': doc.id, ...doc.data()};
+    }).toList();
+
+    safeChangeNotifier();
+  }
+
+  /// Student Filter Screen
+  Future<void> fetchStudents(String orgId) async {
+    final snapshot = await _db
+        .collection('organizations')
+        .doc(orgId)
+        .collection('members')
+        .where('role', isEqualTo: 'student')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    _students = snapshot.docs.map((doc) {
+      return {'id': doc.id, ...doc.data()};
+    }).toList();
+
+    safeChangeNotifier();
   }
 
   void safeChangeNotifier() {

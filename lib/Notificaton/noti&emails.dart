@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Notificaton/announcements_widget.dart';
 import 'package:htoochoon_flutter/Notificaton/invitations.dart';
@@ -18,12 +19,21 @@ class _NotiAndEmailsState extends State<NotiAndEmails>
   @override
   void initState() {
     super.initState();
-    context.read<NotificatonProvider>().init(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      context.read<NotificationProvider>().init(
+        vsync: this,
+        email: user.email!,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<NotificatonProvider>();
+    final provider = context.watch<NotificationProvider>();
 
     return Scaffold(
       appBar: AppBar(

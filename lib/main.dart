@@ -36,7 +36,7 @@ void main() async {
           create: (context) => SubscriptionProvider(),
         ), // New
 
-        ChangeNotifierProvider(create: (context) => NotificatonProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),

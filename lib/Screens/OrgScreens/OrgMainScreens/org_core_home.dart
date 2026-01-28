@@ -485,7 +485,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
                             'You have been invited to join our organization as a teacher.',
                       );
 
-                      Navigator.pop(ctx);
+                      Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Invitation Sent!")),

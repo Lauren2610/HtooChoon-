@@ -7,7 +7,7 @@ class AnnouncementsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<NotificatonProvider>();
+    final provider = context.watch<NotificationProvider>();
 
     if (provider.announcements.isEmpty) {
       return const Center(child: Text('No announcements'));
