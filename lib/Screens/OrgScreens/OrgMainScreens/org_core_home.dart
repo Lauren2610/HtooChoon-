@@ -5,6 +5,7 @@ import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/invitation_screen.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/org_tabs/members_tab.dart';
 import 'package:provider/provider.dart';
 import 'OrgWidgets/org_dashboard_widgets.dart';
 
@@ -20,6 +21,7 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
   final List<Widget> _pages = [
     const OrgDashboardScreen(),
     const AllProgramsScreen(),
+    const MemberFilterScreen(),
     const TeachersListScreen(),
     const StudentsListScreen(),
   ];
@@ -60,6 +62,11 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
                         icon: Icon(Icons.layers_outlined),
                         selectedIcon: Icon(Icons.layers),
                         label: Text('Programs'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.all_inclusive),
+                        selectedIcon: Icon(Icons.all_inclusive_outlined),
+                        label: Text('Members'),
                       ),
                       NavigationRailDestination(
                         icon: Icon(Icons.person_pin_outlined),

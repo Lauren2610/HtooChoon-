@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+enum MemberFilter { all, teacher, student }
+
 class OrgProvider extends ChangeNotifier {
   bool isDisposed = false;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -15,8 +17,10 @@ class OrgProvider extends ChangeNotifier {
   String? _currentUserId;
   String? _currentOrgName;
   bool _isLoading = false;
+  bool _isMembersLoading = false;
 
   bool get isLoading => _isLoading;
+  bool get isMembersLoading => _isMembersLoading;
   String? get currentOrgId => _currentOrgId;
   String? get currentUserId => _currentUserId;
   String? get currentOrgName => _currentOrgName;
@@ -26,6 +30,53 @@ class OrgProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> _userOrgs = [];
   List<Map<String, dynamic>> get userOrgs => _userOrgs;
+
+  //Filter member
+
+  MemberFilter _filter = MemberFilter.all;
+  List<Map<String, dynamic>> _members = [];
+
+  MemberFilter get filter => _filter;
+  List<Map<String, dynamic>> get members => _members;
+
+  void setFilter(MemberFilter filter) {
+    _filter = filter;
+    fetchMembers();
+  }
+
+  Future<void> fetchMembers() async {
+    if (_currentOrgId == null) return;
+
+    try {
+      _isMembersLoading = true;
+      notifyListeners();
+
+      Query query = _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members');
+
+      if (_filter != MemberFilter.all) {
+        query = query.where('role', isEqualTo: _filter.name);
+      }
+
+      final snapshot = await query.get();
+
+      _members = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          return {'id': doc.id, ...data};
+        } else {
+          return {'id': doc.id};
+        }
+      }).toList();
+    } catch (e) {
+      debugPrint('Fetch members error: $e');
+    } finally {
+      _isMembersLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> initializeApp() async {
     _isLoading = true;
