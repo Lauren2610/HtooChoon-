@@ -575,10 +575,15 @@ class CourseDetailScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ClassInteriorDashboard(
+                                builder: (context) => ClassDetailScreen(
                                   classId: cls['courseId'],
                                   className: cls['name'],
                                 ),
+
+                                //     ClassInteriorDashboard(
+                                //   classId: cls['courseId'],
+                                //   className: cls['name'],
+                                // ),
                               ),
                             );
                           },
