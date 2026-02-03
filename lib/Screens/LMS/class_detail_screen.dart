@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Screens/LMS/assignment_list_screen.dart';
 import 'package:htoochoon_flutter/Screens/LMS/live_session_list_screen.dart';
-// import 'package:htoochoon_flutter/Screens/LMS/progress_screen.dart'; // Unused in snippet, keep if needed
 
 class ClassDetailScreen extends StatelessWidget {
   final String classId;
@@ -43,10 +42,6 @@ class ClassDetailScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // OVERVIEW TAB
-  // ---------------------------------------------------------------------------
 
   Widget _buildOverviewTab(BuildContext context) {
     return SingleChildScrollView(
@@ -99,12 +94,8 @@ class ClassDetailScreen extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // PEOPLE TAB (Google Classroom Style)
-  // ---------------------------------------------------------------------------
-
   Widget _buildPeopleTab(BuildContext context) {
-    // TODO: Replace these dummy lists with data from your Provider
+    // TODO: Replace these dummy lists with data from real Provider
     // final orgProvider = Provider.of<OrgProvider>(context);
     // final teachers = orgProvider.getTeachers(classId);
 
@@ -219,13 +210,11 @@ class ClassDetailScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
-          // Optional: Add an ellipsis menu for actions like "Remove student" or "Email"
+
           if (!isTeacher)
             IconButton(
               icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
-              onPressed: () {
-                // Handle student options (email, remove, etc.)
-              },
+              onPressed: () {},
             ),
         ],
       ),
