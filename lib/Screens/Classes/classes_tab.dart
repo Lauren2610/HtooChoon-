@@ -1,64 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Theme/themedata.dart';
+
 class ClassesTab extends StatelessWidget {
-  const ClassesTab({super.key});
+  ClassesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
-          "My Classes",
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-            color: Colors.black87,
-          ),
+          'My Classes',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         actions: [
           IconButton(
-            onPressed: () {}, // Filter action
-            icon: const Icon(Icons.filter_list),
+            onPressed: () {},
+            icon: const Icon(Icons.filter_list, size: 22),
           ),
+          const SizedBox(width: AppTheme.spaceXs),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
+        padding: const EdgeInsets.all(AppTheme.spaceLg),
+        children: [
           // Active Classes Section
-          SectionLabel(label: "Active"),
-          SizedBox(height: 12),
-          ClassListItem(
-            title: "Python Basics (Batch A)",
-            days: "Mon, Wed • 10:00 AM",
-            instructor: "Dr. Smith",
+          _SectionLabel(label: 'Active'),
+          const SizedBox(height: AppTheme.spaceMd),
+          _ClassListItem(
+            title: 'Python Basics (Batch A)',
+            days: 'Mon, Wed • 10:00 AM',
+            instructor: 'Dr. Smith',
             progress: 0.45,
-            statusColor: Colors.green,
-            statusText: "On Track",
+            statusColor: AppTheme.success,
+            statusText: 'On Track',
           ),
-          SizedBox(height: 16),
-          ClassListItem(
-            title: "Web Development Bootcamp",
-            days: "Tue, Thu • 2:00 PM",
-            instructor: "Prof. Johnson",
+          const SizedBox(height: AppTheme.spaceMd),
+          _ClassListItem(
+            title: 'Web Development Bootcamp',
+            days: 'Tue, Thu • 2:00 PM',
+            instructor: 'Prof. Johnson',
             progress: 0.1,
-            statusColor: Colors.orange,
-            statusText: "Behind",
+            statusColor: AppTheme.warning,
+            statusText: 'Behind',
           ),
 
-          SizedBox(height: 32),
+          const SizedBox(height: AppTheme.space2xl),
 
-          // Completed / Archived Section
-          SectionLabel(label: "Past"),
-          SizedBox(height: 12),
-          ClassListItem(
-            title: "Intro to CS",
-            days: "Completed",
-            instructor: "Dr. Smith",
+          // Past Classes Section
+          _SectionLabel(label: 'Past'),
+          const SizedBox(height: AppTheme.spaceMd),
+          _ClassListItem(
+            title: 'Intro to CS',
+            days: 'Completed',
+            instructor: 'Dr. Smith',
             progress: 1.0,
-            statusColor: Colors.grey,
-            statusText: "Completed",
+            statusColor: AppTheme.getTextTertiary(context),
+            statusText: 'Completed',
             isCompleted: true,
           ),
         ],
@@ -67,25 +72,25 @@ class ClassesTab extends StatelessWidget {
   }
 }
 
-class SectionLabel extends StatelessWidget {
+class _SectionLabel extends StatelessWidget {
   final String label;
-  const SectionLabel({super.key, required this.label});
+
+  const _SectionLabel({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       label.toUpperCase(),
-      style: GoogleFonts.inter(
-        fontSize: 12,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppTheme.getTextTertiary(context),
+        letterSpacing: 1.2,
         fontWeight: FontWeight.w600,
-        color: Colors.grey.shade500,
-        letterSpacing: 1.0,
       ),
     );
   }
 }
 
-class ClassListItem extends StatelessWidget {
+class _ClassListItem extends StatelessWidget {
   final String title;
   final String days;
   final String instructor;
@@ -94,8 +99,7 @@ class ClassListItem extends StatelessWidget {
   final String statusText;
   final bool isCompleted;
 
-  const ClassListItem({
-    super.key,
+  const _ClassListItem({
     required this.title,
     required this.days,
     required this.instructor,
@@ -109,43 +113,44 @@ class ClassListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Theme.of(context).cardColor,
+        borderRadius: AppTheme.borderRadiusLg,
+        border: Border.all(color: AppTheme.getBorder(context), width: 1),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {},
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppTheme.borderRadiusLg,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icon / Thumbnail
+                // Icon
                 Container(
                   width: 48,
                   height: 48,
-                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: isCompleted ? Colors.grey.shade100 : const Color(0xFFF0F7FF),
-                    borderRadius: BorderRadius.circular(8),
+                    color: isCompleted
+                        ? AppTheme.getSurfaceVariant(context)
+                        : Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: AppTheme.borderRadiusMd,
                   ),
                   child: Icon(
-                    isCompleted ? Icons.check_circle_outline : Icons.class_outlined,
-                    color: isCompleted ? Colors.grey : const Color(0xFF4D7CFE),
+                    isCompleted
+                        ? Icons.check_circle_outline
+                        : Icons.class_outlined,
+                    color: isCompleted
+                        ? AppTheme.getTextSecondary(context)
+                        : Theme.of(context).colorScheme.primary,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 16),
-                
+                const SizedBox(width: AppTheme.spaceMd),
+
                 // Content
                 Expanded(
                   child: Column(
@@ -153,64 +158,77 @@ class ClassListItem extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: isCompleted ? Colors.grey.shade700 : Colors.black87,
+                          color: isCompleted
+                              ? AppTheme.getTextSecondary(context)
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppTheme.space2xs),
                       Text(
                         instructor,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.getTextSecondary(context),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppTheme.spaceXs),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade400),
-                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: AppTheme.getTextTertiary(context),
+                          ),
+                          const SizedBox(width: AppTheme.space2xs),
                           Text(
                             days,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppTheme.getTextSecondary(context),
+                                  fontSize: 12,
+                                ),
                           ),
                           const Spacer(),
-                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spaceXs,
+                              vertical: AppTheme.space2xs,
+                            ),
                             decoration: BoxDecoration(
                               color: statusColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppTheme.borderRadiusSm,
                             ),
                             child: Text(
                               statusText,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: statusColor,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: statusColor,
+                                    fontSize: 10,
+                                  ),
                             ),
                           ),
                         ],
                       ),
                       if (!isCompleted) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceSm),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: AppTheme.borderRadiusSm,
                           child: LinearProgressIndicator(
                             value: progress,
-                            backgroundColor: Colors.grey.shade100,
+                            backgroundColor: AppTheme.getSurfaceVariant(
+                              context,
+                            ),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              progress < 0.3 ? Colors.orange : const Color(0xFF4D7CFE),
+                              progress < 0.3
+                                  ? AppTheme.warning
+                                  : Theme.of(context).colorScheme.primary,
                             ),
                             minHeight: 4,
                           ),
                         ),
-                      ]
+                      ],
                     ],
                   ),
                 ),

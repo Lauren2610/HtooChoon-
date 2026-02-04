@@ -9,9 +9,16 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../Providers/user_provider.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/user_provider.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:htoochoon_flutter/Theme/themedata.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key});
+  ProfileTab({super.key});
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -23,7 +30,6 @@ class _ProfileTabState extends State<ProfileTab> {
 
   final ImagePicker _picker = ImagePicker();
 
-  // ------------------ PICK IMAGE ------------------
   Future<void> _pickProfileImage(UserProvider provider) async {
     final XFile? file = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -39,7 +45,6 @@ class _ProfileTabState extends State<ProfileTab> {
     await _uploadProfileImage(provider);
   }
 
-  // ------------------ UPLOAD IMAGE ------------------
   Future<void> _uploadProfileImage(UserProvider provider) async {
     if (_pickedImage == null) return;
 
@@ -51,12 +56,12 @@ class _ProfileTabState extends State<ProfileTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Profile photo updated")));
+      ).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Failed to upload image")));
+      ).showSnackBar(const SnackBar(content: Text('Failed to upload image')));
     } finally {
       if (mounted) {
         setState(() {
@@ -67,7 +72,6 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
-  // ------------------ EDIT NAME ------------------
   void _showEditNameDialog(
     BuildContext context,
     UserProvider provider,
@@ -80,16 +84,17 @@ class _ProfileTabState extends State<ProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Edit Name"),
+        title: const Text('Edit Name'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: "Full Name"),
+          decoration: const InputDecoration(labelText: 'Full Name'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: const Text('Cancel'),
           ),
+          const SizedBox(width: AppTheme.spaceXs),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.trim().isEmpty) return;
@@ -97,14 +102,13 @@ class _ProfileTabState extends State<ProfileTab> {
               await provider.updateProfile(name: controller.text.trim());
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text("Save"),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  // ------------------ UI ------------------
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
@@ -115,19 +119,47 @@ class _ProfileTabState extends State<ProfileTab> {
     }
 
     if (user == null) {
-      return const Center(child: Text("Unable to load profile"));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppTheme.getTextTertiary(context),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Text(
+              'Unable to load profile',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.getTextSecondary(context),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     final String displayName = user['name'] ?? user['username'] ?? 'User';
     final String? photoUrl = user['photo'];
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Profile")),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text(
+          'My Profile',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.spaceLg),
         child: Column(
           children: [
-            // ------------------ AVATAR ------------------
+            // Avatar
             Stack(
               alignment: Alignment.bottomRight,
               children: [
@@ -135,7 +167,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   radius: 52,
                   backgroundColor: Theme.of(
                     context,
-                  ).primaryColor.withOpacity(0.1),
+                  ).colorScheme.primary.withOpacity(0.1),
                   backgroundImage: _pickedImage != null
                       ? FileImage(_pickedImage!)
                       : (photoUrl != null ? NetworkImage(photoUrl) : null)
@@ -143,29 +175,37 @@ class _ProfileTabState extends State<ProfileTab> {
                   child: photoUrl == null && _pickedImage == null
                       ? Text(
                           displayName[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                         )
                       : null,
                 ),
 
-                // CAMERA BUTTON
+                // Camera Button
                 Positioned(
-                  bottom: 4,
-                  right: 4,
-                  child: InkWell(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
                     onTap: _isUploadingImage
                         ? null
                         : () => _pickProfileImage(userProvider),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Container(
+                      padding: const EdgeInsets.all(AppTheme.spaceXs),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          width: 3,
+                        ),
+                      ),
                       child: _isUploadingImage
                           ? const SizedBox(
-                              width: 14,
-                              height: 14,
+                              width: 16,
+                              height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: Colors.white,
@@ -182,75 +222,198 @@ class _ProfileTabState extends State<ProfileTab> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLg),
 
-            // ------------------ NAME ------------------
+            // Name
             Text(
               displayName,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
 
+            const SizedBox(height: AppTheme.space2xs),
+
+            // Email
             Text(
               user['email'] ?? '',
-              style: TextStyle(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.getTextSecondary(context),
+              ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space2xl),
 
-            // ------------------ PLAN CARD ------------------
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.indigo),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Current Plan",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Text(
-                            (user['plan'] ?? 'Free').toString().toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(onPressed: () {}, child: const Text("Upgrade")),
-                  ],
+            // Plan Card
+            Container(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: AppTheme.borderRadiusLg,
+                border: Border.all(
+                  color: AppTheme.getBorder(context),
+                  width: 1,
                 ),
               ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.spaceXs),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      color: Color(0xFF8B5CF6),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current Plan',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.getTextSecondary(context),
+                              ),
+                        ),
+                        const SizedBox(height: AppTheme.space2xs),
+                        Text(
+                          (user['plan'] ?? 'Free').toString().toUpperCase(),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(onPressed: () {}, child: const Text('Upgrade')),
+                ],
+              ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.space2xl),
 
-            // ------------------ EDIT NAME ------------------
+            // Edit Name Button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.edit),
-                label: const Text("Edit Name"),
+                icon: const Icon(Icons.edit, size: 20),
+                label: const Text('Edit Name'),
                 onPressed: () =>
                     _showEditNameDialog(context, userProvider, user),
               ),
             ),
+
+            const SizedBox(height: AppTheme.spaceMd),
+
+            // Account Settings Section (optional enhancement)
+            Container(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: AppTheme.borderRadiusLg,
+                border: Border.all(
+                  color: AppTheme.getBorder(context),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Account Settings',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  _SettingItem(
+                    icon: Icons.email_outlined,
+                    title: 'Email',
+                    subtitle: user['email'] ?? '',
+                    onTap: () {},
+                  ),
+                  Divider(height: 1, color: AppTheme.getBorder(context)),
+                  _SettingItem(
+                    icon: Icons.lock_outline,
+                    title: 'Change Password',
+                    subtitle: '••••••••',
+                    onTap: () {},
+                  ),
+                  Divider(height: 1, color: AppTheme.getBorder(context)),
+                  _SettingItem(
+                    icon: Icons.notifications_outlined,
+                    title: 'Notifications',
+                    subtitle: 'Manage preferences',
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppTheme.getTextSecondary(context)),
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.space2xs),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.getTextSecondary(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppTheme.getTextTertiary(context),
+              ),
+            ],
+          ),
         ),
       ),
     );
