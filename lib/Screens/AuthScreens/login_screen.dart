@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:htoochoon_flutter/Theme/themedata.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -466,6 +467,690 @@ class SocialButton extends StatelessWidget {
       child: isBlue || isBlack
           ? Image.network(iconUrl, color: Colors.white)
           : Image.network(iconUrl),
+    );
+  }
+}
+
+/// Premium Login Screen
+/// Design principles:
+/// - Soft, calm aesthetic
+/// - Clear visual hierarchy
+/// - Generous spacing
+/// - Professional appearance
+class PremiumLoginScreen extends StatelessWidget {
+  const PremiumLoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              // Desktop/Web: Split screen layout
+              return Row(
+                children: [
+                  const Expanded(flex: 5, child: _AuthFormSection()),
+                  Expanded(flex: 5, child: _RightSideVisual()),
+                ],
+              );
+            } else {
+              // Mobile: Single column
+              return const Center(child: _AuthFormSection());
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Auth Form Section - Left side on desktop, full screen on mobile
+class _AuthFormSection extends StatefulWidget {
+  const _AuthFormSection();
+
+  @override
+  State<_AuthFormSection> createState() => _AuthFormSectionState();
+}
+
+class _AuthFormSectionState extends State<_AuthFormSection> {
+  bool _isSignUp = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _usernameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isSignUp = !_isSignUp;
+      _formKey.currentState?.reset();
+    });
+  }
+
+  void _handleSubmit(LoginProvider provider) {
+    if (_formKey.currentState!.validate()) {
+      if (_isSignUp) {
+        provider.registerUser(
+          context,
+          _emailController.text.trim(),
+          _passwordController.text,
+          _usernameController.text.trim(),
+        );
+      } else {
+        provider.loginWithEmail(
+          context,
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width > 600
+              ? AppTheme.space4xl
+              : AppTheme.spaceLg,
+          vertical: AppTheme.space2xl,
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Logo
+                const _LogoBranding(),
+
+                const SizedBox(height: AppTheme.space3xl),
+
+                // Header
+                _AuthHeader(isSignUp: _isSignUp),
+
+                const SizedBox(height: AppTheme.space2xl),
+
+                // Mode Toggle
+                _AuthModeToggle(isSignUp: _isSignUp, onToggle: _toggleMode),
+
+                const SizedBox(height: AppTheme.space2xl),
+
+                // Form Fields
+                if (_isSignUp) ...[
+                  _FormField(
+                    controller: _usernameController,
+                    label: 'Username',
+                    hint: 'Choose a unique username',
+                    prefixIcon: Icons.person_outline,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a username';
+                      }
+                      if (value.length < 3) {
+                        return 'Username must be at least 3 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppTheme.spaceLg),
+                ],
+
+                _FormField(
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Enter your email address',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: AppTheme.spaceLg),
+
+                _FormField(
+                  controller: _passwordController,
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+
+                if (_isSignUp) ...[
+                  const SizedBox(height: AppTheme.spaceLg),
+                  _FormField(
+                    controller: _confirmPasswordController,
+                    label: 'Confirm Password',
+                    hint: 'Repeat your password',
+                    prefixIcon: Icons.lock_reset_outlined,
+                    obscureText: _obscureConfirmPassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
+                      },
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm your password';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+
+                const SizedBox(height: AppTheme.space2xl),
+
+                // Submit Button
+                _SubmitButton(
+                  isSignUp: _isSignUp,
+                  isLoading: loginProvider.isLoading,
+                  onPressed: () => _handleSubmit(loginProvider),
+                ),
+
+                const SizedBox(height: AppTheme.spaceLg),
+
+                // Footer Text
+                _FooterText(isSignUp: _isSignUp, onToggle: _toggleMode),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Logo and branding
+class _LogoBranding extends StatelessWidget {
+  const _LogoBranding();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spaceSm),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            ),
+            borderRadius: AppTheme.borderRadiusMd,
+          ),
+          child: const Icon(
+            Icons.school_rounded,
+            size: 28,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceSm),
+        Text(
+          'HtooChoon',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Header with title and subtitle
+class _AuthHeader extends StatelessWidget {
+  final bool isSignUp;
+
+  const _AuthHeader({required this.isSignUp});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isSignUp ? 'Create Account' : 'Welcome Back',
+          style: Theme.of(
+            context,
+          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppTheme.spaceXs),
+        Text(
+          isSignUp
+              ? 'Sign up to start your learning journey'
+              : 'Login to continue your progress',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: AppTheme.getTextSecondary(context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Login/Signup mode toggle
+class _AuthModeToggle extends StatelessWidget {
+  final bool isSignUp;
+  final VoidCallback onToggle;
+
+  const _AuthModeToggle({required this.isSignUp, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.space2xs),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceVariant(context),
+        borderRadius: AppTheme.borderRadiusLg,
+      ),
+      child: Row(
+        children: [
+          _ToggleOption(
+            label: 'Login',
+            isActive: !isSignUp,
+            onTap: isSignUp ? onToggle : null,
+          ),
+          _ToggleOption(
+            label: 'Sign up',
+            isActive: isSignUp,
+            onTap: !isSignUp ? onToggle : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToggleOption extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback? onTap;
+
+  const _ToggleOption({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+          decoration: BoxDecoration(
+            color: isActive ? Theme.of(context).cardColor : Colors.transparent,
+            borderRadius: AppTheme.borderRadiusMd,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: isActive
+                    ? Theme.of(context).colorScheme.onSurface
+                    : AppTheme.getTextSecondary(context),
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Reusable form field with consistent styling
+class _FormField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData prefixIcon;
+  final Widget? suffixIcon;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+
+  const _FormField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.prefixIcon,
+    this.suffixIcon,
+    this.obscureText = false,
+    this.keyboardType,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      style: Theme.of(context).textTheme.bodyMedium,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(prefixIcon, size: 20),
+        suffixIcon: suffixIcon,
+      ),
+      validator: validator,
+    );
+  }
+}
+
+/// Submit button with loading state
+class _SubmitButton extends StatelessWidget {
+  final bool isSignUp;
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _SubmitButton({
+    required this.isSignUp,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                isSignUp ? 'Create Account' : 'Login',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+/// Footer text with mode switch link
+class _FooterText extends StatelessWidget {
+  final bool isSignUp;
+  final VoidCallback onToggle;
+
+  const _FooterText({required this.isSignUp, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            isSignUp ? 'Already have an account?' : "Don't have an account?",
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.getTextSecondary(context),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceXs),
+          GestureDetector(
+            onTap: onToggle,
+            child: Text(
+              isSignUp ? 'Login' : 'Sign up',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Right side visual panel (desktop only)
+class _RightSideVisual extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [
+                  const Color(0xFF1E3A8A).withOpacity(0.3),
+                  const Color(0xFF1E40AF).withOpacity(0.2),
+                  const Color(0xFF3B82F6).withOpacity(0.1),
+                ]
+              : [
+                  const Color(0xFFF0F4FF),
+                  const Color(0xFFD9E4FF),
+                  const Color(0xFFAEC6FF),
+                ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Illustration container
+            Container(
+              height: 450,
+              width: 450,
+              decoration: BoxDecoration(
+                borderRadius: AppTheme.borderRadius2xl,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                    blurRadius: 60,
+                    spreadRadius: 10,
+                    offset: const Offset(0, 30),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: AppTheme.borderRadius2xl,
+                child: Image.network(
+                  'https://cdn3d.iconscout.com/3d/premium/thumb/online-education-4635835-3864077.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: AppTheme.borderRadius2xl,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.school_rounded,
+                            size: 120,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.3),
+                          ),
+                          const SizedBox(height: AppTheme.spaceLg),
+                          Text(
+                            'Learn & Grow',
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  color: AppTheme.getTextSecondary(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppTheme.space3xl),
+
+            // Feature highlights
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.space4xl,
+              ),
+              child: Column(
+                children: [
+                  _FeatureItem(
+                    icon: Icons.workspace_premium,
+                    title: 'Premium Education',
+                    subtitle: 'Access world-class learning resources',
+                  ),
+                  const SizedBox(height: AppTheme.spaceLg),
+                  _FeatureItem(
+                    icon: Icons.people_outline,
+                    title: 'Expert Instructors',
+                    subtitle: 'Learn from industry professionals',
+                  ),
+                  const SizedBox(height: AppTheme.spaceLg),
+                  _FeatureItem(
+                    icon: Icons.trending_up,
+                    title: 'Track Progress',
+                    subtitle: 'Monitor your learning journey',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _FeatureItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spaceSm),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor.withOpacity(0.5),
+            borderRadius: AppTheme.borderRadiusMd,
+          ),
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceMd),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.getTextSecondary(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

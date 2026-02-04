@@ -252,7 +252,7 @@ class LoginProvider extends ChangeNotifier {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => LoginScreen()),
+        MaterialPageRoute(builder: (_) => PremiumLoginScreen()),
       );
     } catch (e) {
       debugPrint("Logout error: $e");

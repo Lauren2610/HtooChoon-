@@ -8,6 +8,7 @@ import 'package:htoochoon_flutter/Screens/Classes/classes_tab.dart';
 import 'package:htoochoon_flutter/Screens/Courses/courses_tab.dart';
 import 'package:htoochoon_flutter/Screens/Home/home_tab.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_core_home.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_dashboard_wrapper.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_context_loader.dart';
 import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemented
 import 'package:lottie/lottie.dart';
@@ -49,7 +50,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
     final orgProvider = context.watch<OrgProvider>();
-
+    //TODO chg HERE CHANGE PREMIUM UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (orgProvider.justSwitched) {
         orgProvider.clearJustSwitched();
@@ -57,7 +58,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) =>
-                MainDashboardWrapper(currentOrgID: orgProvider.currentOrgId),
+                PremiumDashboardWrapper(currentOrgID: orgProvider.currentOrgId),
+            // MainDashboardWrapper(currentOrgID: orgProvider.currentOrgId),
           ),
           (route) => false,
         );

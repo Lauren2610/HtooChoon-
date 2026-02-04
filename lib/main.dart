@@ -12,8 +12,9 @@ import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
 import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart'; // New
-import 'package:htoochoon_flutter/Theme/app_theme.dart';
+import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:htoochoon_flutter/firebase_options.dart';
+
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // New
@@ -143,8 +144,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // Not logged in
-        return const LoginScreen();
+        return const PremiumLoginScreen();
       },
     );
   }
