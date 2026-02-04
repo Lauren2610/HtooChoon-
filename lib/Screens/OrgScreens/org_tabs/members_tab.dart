@@ -52,7 +52,12 @@ class MemberFilterScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: ChoiceChip(
-        label: Text(label),
+        label: Text(
+          label,
+          style: isSelected
+              ? TextStyle(color: Theme.of(context).colorScheme.inversePrimary)
+              : TextStyle(color: Theme.of(context).colorScheme.tertiary),
+        ),
         selected: isSelected,
         onSelected: (_) => context.read<OrgProvider>().setFilter(filter),
       ),
