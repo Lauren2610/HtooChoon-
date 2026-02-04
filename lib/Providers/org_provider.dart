@@ -495,9 +495,9 @@ class OrgProvider extends ChangeNotifier {
   }
 
   Future<void> leaveOrganization() async {
-    if (_isLoading) return;
+    if (_orgIsLoading) return;
 
-    _isLoading = true;
+    _orgIsLoading = true;
     _lastAction = OrgAction.none;
     notifyListeners();
 
@@ -514,7 +514,7 @@ class OrgProvider extends ChangeNotifier {
     _role = null;
     _orgData = null;
 
-    _isLoading = false;
+    _orgIsLoading = false;
     _lastAction = OrgAction.exited;
     notifyListeners();
   }

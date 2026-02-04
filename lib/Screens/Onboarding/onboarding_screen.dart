@@ -17,17 +17,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       "title": "Welcome to Htoo Choon",
       "desc": "The ultimate platform for modern education management.",
-      "image": "assets/onboarding_1.png" // Placeholder
+      "image": "assets/onboarding_1.png", // Placeholder
     },
     {
       "title": "Manage Everything",
       "desc": "Classes, courses, students, and teachers - all in one place.",
-      "image": "assets/onboarding_2.png" // Placeholder
+      "image": "assets/onboarding_2.png", // Placeholder
     },
     {
       "title": "Join an Organization",
       "desc": "Create your own school or join an existing one to get started.",
-      "image": "assets/onboarding_3.png" // Placeholder
+      "image": "assets/onboarding_3.png", // Placeholder
     },
   ];
 
@@ -38,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const MainScaffold()),
+      MaterialPageRoute(builder: (_) => MainScaffold()),
     );
   }
 
@@ -62,17 +62,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Placeholder Icon instead of Image for now
-                        Icon(Icons.school_rounded, size: 100, color: Theme.of(context).primaryColor),
+                        Icon(
+                          Icons.school_rounded,
+                          size: 100,
+                          color: Theme.of(context).primaryColor,
+                        ),
                         const SizedBox(height: 48),
                         Text(
                           _pages[index]['title']!,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _pages[index]['desc']!,
-                          style: const TextStyle(fontSize: 16, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -103,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  
+
                   // Button
                   ElevatedButton(
                     onPressed: () {
@@ -116,7 +126,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         _finishOnboarding();
                       }
                     },
-                    child: Text(_currentPage == _pages.length - 1 ? "Get Started" : "Next"),
+                    child: Text(
+                      _currentPage == _pages.length - 1
+                          ? "Get Started"
+                          : "Next",
+                    ),
                   ),
                 ],
               ),

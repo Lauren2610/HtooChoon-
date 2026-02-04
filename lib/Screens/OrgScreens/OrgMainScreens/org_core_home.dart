@@ -36,13 +36,12 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
     bool isExtended = MediaQuery.of(context).size.width > 900;
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🔥 HANDLE EXIT ORG NAVIGATION HERE
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (orgProvider.lastAction == OrgAction.exited) {
         orgProvider.clearLastAction();
 
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScaffold()),
+          MaterialPageRoute(builder: (_) => MainScaffold()),
           (route) => false,
         );
       }
@@ -53,7 +52,6 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
         Scaffold(
           body: Row(
             children: [
-              // ---------- SIDEBAR ----------
               Container(
                 width: isExtended ? 250 : 80,
                 color: Theme.of(context).cardColor,
@@ -114,7 +112,7 @@ class _MainDashboardWrapperState extends State<MainDashboardWrapper> {
           ),
         ),
 
-        const GlobalOrgSwitchOverlay(),
+        GlobalOrgSwitchOverlay(loadingText: "Exiting organization…"),
       ],
     );
   }

@@ -25,7 +25,7 @@ import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemen
 import 'package:provider/provider.dart';
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  MainScaffold({super.key});
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -169,20 +169,21 @@ class _MainScaffoldState extends State<MainScaffold> {
             ],
           ),
         ),
-        const GlobalOrgSwitchOverlay(),
+        GlobalOrgSwitchOverlay(loadingText: "Switching organization…"),
       ],
     );
   }
 }
 
 class GlobalOrgSwitchOverlay extends StatelessWidget {
-  const GlobalOrgSwitchOverlay({super.key});
+  String? loadingText;
+  GlobalOrgSwitchOverlay({super.key, required this.loadingText});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<OrgProvider>(
       builder: (_, provider, __) {
-        if (!provider.isLoading) return const SizedBox.shrink();
+        if (!provider.orgIsLoading) return const SizedBox.shrink();
 
         return Positioned.fill(
           child: IgnorePointer(
@@ -195,11 +196,11 @@ class GlobalOrgSwitchOverlay extends StatelessWidget {
                     SizedBox(
                       height: 120,
                       width: 120,
-                      child: Lottie.asset('assets/lottie/org_switch.json'),
+                      child: Lottie.asset('assets/lottie/networking.json'),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      "Switching organization…",
+                    Text(
+                      loadingText.toString(),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,

@@ -224,7 +224,7 @@ class LoginProvider extends ChangeNotifier {
     // UNIFIED ROUTE: Everyone goes to MainScaffold
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const MainScaffold()),
+      MaterialPageRoute(builder: (_) => MainScaffold()),
     );
   }
 

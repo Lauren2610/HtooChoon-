@@ -27,7 +27,6 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
       builder: (context, orgProvider, _) {
         return Stack(
           children: [
-            // ---------------- MAIN CONTENT ----------------
             if (orgProvider.userOrgs.isNotEmpty)
               Scaffold(
                 appBar: AppBar(
@@ -71,7 +70,7 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
-                        onTap: orgProvider.orgIsLoading
+                        onTap: orgProvider.isLoading
                             ? null
                             : () {
                                 context.read<OrgProvider>().switchOrganization(
@@ -141,7 +140,6 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
                 ),
               )
             else
-              // ---------------- EMPTY STATE ----------------
               Scaffold(
                 body: Center(
                   child: Column(
@@ -161,40 +159,71 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
                 ),
               ),
 
-            // ---------------- FACEBOOK-STYLE SWITCHING OVERLAY ----------------
-            if (orgProvider.isLoading)
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: true,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.55),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            height: 120,
-                            width: 120,
-                            child: Lottie.asset(
-                              'assets/lottie/networking.json',
-                              repeat: true,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "Switching organization…",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            // if (orgProvider.orgIsLoading)
+            //   Positioned.fill(
+            //     child: IgnorePointer(
+            //       ignoring: true,
+            //       child: Container(
+            //         color: Colors.black.withOpacity(0.55),
+            //         child: Center(
+            //           child: Column(
+            //             mainAxisSize: MainAxisSize.min,
+            //             children: [
+            //               SizedBox(
+            //                 height: 120,
+            //                 width: 120,
+            //                 child: Lottie.asset(
+            //                   'assets/lottie/networking.json',
+            //                   repeat: true,
+            //                 ),
+            //               ),
+            //               const SizedBox(height: 16),
+            //               const Text(
+            //                 "Switching organization…",
+            //                 style: TextStyle(
+            //                   color: Colors.white,
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w500,
+            //                 ),
+            //               ),
+            //             ],
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),   // if (orgProvider.orgIsLoading)
+            //   Positioned.fill(
+            //     child: IgnorePointer(
+            //       ignoring: true,
+            //       child: Container(
+            //         color: Colors.black.withOpacity(0.55),
+            //         child: Center(
+            //           child: Column(
+            //             mainAxisSize: MainAxisSize.min,
+            //             children: [
+            //               SizedBox(
+            //                 height: 120,
+            //                 width: 120,
+            //                 child: Lottie.asset(
+            //                   'assets/lottie/networking.json',
+            //                   repeat: true,
+            //                 ),
+            //               ),
+            //               const SizedBox(height: 16),
+            //               const Text(
+            //                 "Switching organization…",
+            //                 style: TextStyle(
+            //                   color: Colors.white,
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w500,
+            //                 ),
+            //               ),
+            //             ],
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
           ],
         );
       },

@@ -136,7 +136,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                       body: Center(child: CircularProgressIndicator()),
                     );
                   }
-                  return const MainScaffold();
+                  return MainScaffold();
                 },
               );
             },
