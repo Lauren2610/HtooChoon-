@@ -102,9 +102,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          // User is logged in.
-
-          // 1. Fetch User Data (ONCE)
           if (!_isInit) {
             _isInit = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -112,7 +109,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
             });
           }
 
-          // 2. Check Onboarding Status
           return FutureBuilder<bool>(
             future: _onboardingCheck,
             builder: (context, onboardingSnapshot) {
@@ -129,7 +125,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 return const OnboardingScreen();
               }
 
-              // 3. Main App Flow
               return Consumer<UserProvider>(
                 builder: (context, userProvider, child) {
                   if (userProvider.isLoading) {

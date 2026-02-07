@@ -103,13 +103,19 @@ class InvitationCard extends StatefulWidget {
 class _InvitationCardState extends State<InvitationCard> {
   bool _isProcessing = false;
   bool _isAccepted = false;
+
   @override
   Widget build(BuildContext context) {
     final data = widget.invite.data() as Map<String, dynamic>;
+    final status =
+        (data['status'] as String?)?.trim().toLowerCase() ?? 'pending';
     final user = FirebaseAuth.instance.currentUser!;
     final orgName = data['organizationName'] as String? ?? 'Organization';
     final role = data['role'] as String? ?? 'member';
     final invitedBy = data['invitedBy'] as String?;
+    final isAccepted = status == 'accepted';
+    final isRejected = status == 'rejected';
+    final isFinal = isAccepted || isRejected;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
