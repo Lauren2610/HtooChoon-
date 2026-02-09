@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class NotificationProvider extends ChangeNotifier {
+class InvitationProvider extends ChangeNotifier {
   late TabController tabController;
   bool isDisposed = false;
 
@@ -28,6 +28,13 @@ class NotificationProvider extends ChangeNotifier {
     fetchAnnouncements();
   }
 
+  ///  Invite from org Create
+  /// Read Fetch Invitations From Org
+  /// Read Fetch User's Invitations
+  ///  Accept (Update status)
+  /// Delete Cancel From Org
+  /// Delete Reject From User
+
   void _listenToInvitations(String? email) {
     if (email == null) return;
 
@@ -36,29 +43,13 @@ class NotificationProvider extends ChangeNotifier {
     _invitationSub = _db
         .collectionGroup('invitations')
         .where('email', isEqualTo: email)
-        .where('status', isEqualTo: 'pending')
+        .where('status', whereIn: ['pending', 'accepted'])
         .snapshots()
         .listen((snapshot) {
           invitations = snapshot.docs;
           notifyListeners();
         });
   }
-
-  // void _listenToInvitations(String email) {
-  //   _invitationSub?.cancel();
-  //   print("print email: $email from _listenToInvitations");
-  //
-  //   _invitationSub = _db
-  //       .collectionGroup('invitations')
-  //       .where('email', isEqualTo: email)
-  //       .where('status', isEqualTo: 'pending')
-  //       .snapshots()
-  //       .listen((snapshot) {
-  //         invitations = snapshot.docs;
-  //         notifyListeners();
-  //       });
-  //   safeChangeNotifier();
-  // }
 
   Future<void> fetchAnnouncements() async {
     final snapshot = await _db
@@ -70,7 +61,7 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> acceptInvitation({
+  Future acceptInvitation({
     required String orgId,
     required String inviteId,
     required String userId,
@@ -78,6 +69,7 @@ class NotificationProvider extends ChangeNotifier {
   }) async {
     final batch = _db.batch();
 
+    // 1. Get invitation data
     final inviteRef = _db
         .collection('organizations')
         .doc(orgId)
@@ -93,12 +85,15 @@ class NotificationProvider extends ChangeNotifier {
     final role = data['role'] as String;
     final classId = data['classId'] as String?;
 
+    // 2. Update invitation status
     batch.update(inviteRef, {
       'status': 'accepted',
       'respondedAt': FieldValue.serverTimestamp(),
     });
 
+    // 3. Add member based on role
     if (role == 'teacher') {
+      // Teachers get org-wide access
       final orgMemberRef = _db
           .collection('organizations')
           .doc(orgId)
@@ -112,13 +107,13 @@ class NotificationProvider extends ChangeNotifier {
         'status': 'active',
         'joinedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-    }
-
-    if (role == 'student') {
+    } else if (role == 'student') {
+      // Students MUST have classId
       if (classId == null) {
         throw Exception('Student invitation missing classId');
       }
 
+      // Add to class members
       final classMemberRef = _db
           .collection('organizations')
           .doc(orgId)
@@ -134,6 +129,20 @@ class NotificationProvider extends ChangeNotifier {
         'status': 'active',
         'joinedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      // Optional: Add to user's enrolled classes for quick lookup
+      final userClassRef = _db
+          .collection('users')
+          .doc(userId)
+          .collection('enrolledClasses')
+          .doc(classId);
+
+      batch.set(userClassRef, {
+        'organizationId': orgId,
+        'classId': classId,
+        'role': 'student',
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
     }
 
     await batch.commit();

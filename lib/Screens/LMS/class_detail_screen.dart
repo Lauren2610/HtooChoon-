@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/OrgWidgets/org_dashboard_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Screens/LMS/assignment_list_screen.dart';
 import 'package:htoochoon_flutter/Screens/LMS/live_session_list_screen.dart';
+import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/OrgWidgets/org_dashboard_tab.dart';
 
 class ClassDetailScreen extends StatelessWidget {
   final String classId;
@@ -16,28 +18,30 @@ class ClassDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(className),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Overview'),
-              Tab(text: 'Assignments'),
-              Tab(text: 'Live Sessions'),
-              Tab(text: 'People'),
+    return Consumer<OrgProvider>(
+      builder: (context, orgProvider, child) => DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(className),
+            bottom: const TabBar(
+              isScrollable: true,
+              tabs: [
+                Tab(text: 'Overview'),
+                Tab(text: 'Assignments'),
+                Tab(text: 'Live Sessions'),
+                Tab(text: 'People'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              _buildOverviewTab(context),
+              AssignmentListScreen(classId: classId),
+              LiveSessionListScreen(classId: classId),
+              _buildPeopleTab(context, orgProvider),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildOverviewTab(context),
-            AssignmentListScreen(classId: classId),
-            LiveSessionListScreen(classId: classId),
-            _buildPeopleTab(context),
-          ],
         ),
       ),
     );
@@ -94,7 +98,7 @@ class ClassDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPeopleTab(BuildContext context) {
+  Widget _buildPeopleTab(BuildContext context, OrgProvider orgProvider) {
     // TODO: Replace these dummy lists with data from real Provider
     // final orgProvider = Provider.of<OrgProvider>(context);
     // final teachers = orgProvider.getTeachers(classId);
@@ -130,7 +134,7 @@ class ClassDetailScreen extends StatelessWidget {
                 Icons.person_add_alt_1,
                 color: Theme.of(context).primaryColor,
               ),
-              onPressed: () => _showInviteDialog(context),
+              onPressed: () => showInviteStudentDialog(context, orgProvider),
             ),
           ),
 

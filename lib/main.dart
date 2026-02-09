@@ -2,8 +2,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/assignment_provider.dart';
+import 'package:htoochoon_flutter/Providers/class_provider.dart';
+import 'package:htoochoon_flutter/Providers/invitation_provider.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
-import 'package:htoochoon_flutter/Providers/notificaton_provider.dart';
+
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Providers/user_provider.dart';
 import 'package:htoochoon_flutter/Providers/structure_provider.dart';
@@ -31,15 +33,16 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => LoginProvider()),
-        ChangeNotifierProvider(create: (context) => UserProvider()), // New
+        ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => OrgProvider()),
         ChangeNotifierProvider(create: (context) => AssignmentProvider()),
-        ChangeNotifierProvider(create: (context) => StructureProvider()), // New
+        ChangeNotifierProvider(create: (context) => StructureProvider()),
+        ChangeNotifierProvider(create: (context) => ClassProvider()),
         ChangeNotifierProvider(
           create: (context) => SubscriptionProvider(),
         ), // New
 
-        ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => InvitationProvider()),
       ],
       child: const MyApp(),
     ),

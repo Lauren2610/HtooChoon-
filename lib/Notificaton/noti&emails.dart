@@ -5,7 +5,8 @@ import 'package:htoochoon_flutter/Notificaton/announcements_widget.dart';
 
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Notificaton/invitations_tab.dart';
-import 'package:htoochoon_flutter/Providers/notificaton_provider.dart';
+import 'package:htoochoon_flutter/Providers/invitation_provider.dart';
+
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -29,16 +30,13 @@ class _NotiAndEmailsState extends State<NotiAndEmails>
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      context.read<NotificationProvider>().init(
-        vsync: this,
-        email: user.email!,
-      );
+      context.read<InvitationProvider>().init(vsync: this, email: user.email!);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<NotificationProvider>();
+    final provider = context.watch<InvitationProvider>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -73,7 +71,7 @@ class InvitationsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<NotificationProvider>();
+    final provider = context.watch<InvitationProvider>();
     final invites = provider.invitations;
 
     if (invites.isEmpty) {
@@ -107,14 +105,16 @@ class _InvitationCardState extends State<InvitationCard> {
   @override
   Widget build(BuildContext context) {
     final data = widget.invite.data() as Map<String, dynamic>;
-    final status =
-        (data['status'] as String?)?.trim().toLowerCase() ?? 'pending';
+
     final user = FirebaseAuth.instance.currentUser!;
     final orgName = data['organizationName'] as String? ?? 'Organization';
     final role = data['role'] as String? ?? 'member';
     final invitedBy = data['invitedBy'] as String?;
+    final status =
+        (data['status'] as String?)?.trim().toLowerCase() ?? 'pending';
     final isAccepted = status == 'accepted';
     final isRejected = status == 'rejected';
+
     final isFinal = isAccepted || isRejected;
 
     return Container(
@@ -149,89 +149,32 @@ class _InvitationCardState extends State<InvitationCard> {
           const SizedBox(height: AppTheme.spaceSm),
 
           Text('Invited as $role'),
-
-          if (invitedBy != null)
-            Text('Invited by $invitedBy')
-          else
-            Text('Invited by system'),
+          Text('Invited by $invitedBy'),
 
           const SizedBox(height: AppTheme.spaceMd),
 
-          // ---- Buttons ----
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: OutlinedButton(
-          //         onPressed: _isProcessing
-          //             ? null
-          //             : () {
-          //                 context.read<NotificationProvider>().rejectInvitation(
-          //                   inviteId: widget.invite.id,
-          //                   orgId: data['orgId'],
-          //                 );
-          //               },
-          //         child: const Text('Decline'),
-          //       ),
-          //     ),
-          //     const SizedBox(width: AppTheme.spaceSm),
-          //     Expanded(
-          //       child: ElevatedButton(
-          //         onPressed: _isProcessing
-          //             ? null
-          //             : () async {
-          //                 setState(() => _isProcessing = true);
-          //
-          //                 try {
-          //                   await context
-          //                       .read<NotificationProvider>()
-          //                       .acceptInvitation(
-          //                         orgId: data['orgId'],
-          //                         inviteId: widget.invite.id,
-          //                         userId: user.uid,
-          //                         email: user.email!,
-          //                         role: data['role'],
-          //                       );
-          //                   setState(() {
-          //                     _isProcessing = false;
-          //                     _isAccepted = true;
-          //                   });
-          //                 } catch (e) {
-          //                   setState(() => _isProcessing = false);
-          //
-          //                   ScaffoldMessenger.of(context).showSnackBar(
-          //                     const SnackBar(
-          //                       content: Text('Failed to accept invitation'),
-          //                     ),
-          //                   );
-          //                 }
-          //               },
-          //         child: _isProcessing
-          //             ? const SizedBox(
-          //                 height: 18,
-          //                 width: 18,
-          //                 child: CircularProgressIndicator(strokeWidth: 2),
-          //               )
-          //             : const Text('Accept'),
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          if (_isAccepted)
+          // ---- Status badge or buttons ----
+          if (isFinal)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: isAccepted
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.check_circle, color: Colors.green),
-                  SizedBox(width: 8),
+                children: [
+                  Icon(
+                    isAccepted ? Icons.check_circle : Icons.cancel,
+                    color: isAccepted ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Accepted',
+                    isAccepted ? 'Accepted' : 'Declined',
                     style: TextStyle(
-                      color: Colors.green,
+                      color: isAccepted ? Colors.green : Colors.red,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -245,12 +188,17 @@ class _InvitationCardState extends State<InvitationCard> {
                   child: OutlinedButton(
                     onPressed: _isProcessing
                         ? null
-                        : () {
-                            context
-                                .read<NotificationProvider>()
+                        : () async {
+                            setState(() => _isProcessing = true);
+
+                            await context
+                                .read<InvitationProvider>()
                                 .rejectInvitation(
                                   inviteId: widget.invite.id,
                                   orgId: data['orgId'],
+                                )
+                                .whenComplete(
+                                  () => setState(() => _isProcessing = false),
                                 );
                           },
                     child: const Text('Decline'),
@@ -266,21 +214,22 @@ class _InvitationCardState extends State<InvitationCard> {
 
                             try {
                               await context
-                                  .read<NotificationProvider>()
+                                  .read<InvitationProvider>()
                                   .acceptInvitation(
                                     orgId: data['orgId'],
                                     inviteId: widget.invite.id,
                                     userId: user.uid,
                                     email: user.email!,
-
-                                    role: data['role'],
                                   );
-
-                              setState(() {
-                                _isProcessing = false;
-                                _isAccepted = true;
-                              });
                             } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Failed to accept invitation. Please try again.',
+                                  ),
+                                ),
+                              );
+                            } finally {
                               setState(() => _isProcessing = false);
                             }
                           },

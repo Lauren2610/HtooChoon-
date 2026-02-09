@@ -123,9 +123,8 @@ class AllProgramsScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: AppTheme.spaceLg),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Implement create program dialog
-                    },
+                    onPressed: () =>
+                        showCreateProgramDialog(context, orgProvider),
                     icon: const Icon(Icons.add, size: 20),
                     label: const Text('New Program'),
                     style: ElevatedButton.styleFrom(
@@ -156,7 +155,7 @@ class AllProgramsScreen extends StatelessWidget {
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return SliverFillRemaining(
-                  child: _buildEmptyState(
+                  child: buildEmptyState(
                     Icons.layers_outlined,
                     'No programs yet',
                     'Create your first program to organize your courses',
@@ -181,7 +180,7 @@ class AllProgramsScreen extends StatelessWidget {
                   ),
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final program = snapshot.data!.docs[index];
-                    return _ProgramCard(
+                    return ProgramCard(
                       name: program['name'],
                       description: program['description'],
                       onTap: () {
@@ -206,7 +205,7 @@ class AllProgramsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(
+  Widget buildEmptyState(
     IconData icon,
     String title,
     String subtitle,
@@ -244,22 +243,22 @@ class AllProgramsScreen extends StatelessWidget {
   }
 }
 
-class _ProgramCard extends StatefulWidget {
+class ProgramCard extends StatefulWidget {
   final String name;
   final String description;
   final VoidCallback onTap;
 
-  const _ProgramCard({
+  const ProgramCard({
     required this.name,
     required this.description,
     required this.onTap,
   });
 
   @override
-  State<_ProgramCard> createState() => _ProgramCardState();
+  State<ProgramCard> createState() => ProgramCardState();
 }
 
-class _ProgramCardState extends State<_ProgramCard> {
+class ProgramCardState extends State<ProgramCard> {
   bool _isHovered = false;
 
   @override

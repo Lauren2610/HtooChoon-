@@ -9,8 +9,8 @@ void showCreateOrgDialog(BuildContext context) {
 
   showDialog(
     context: context,
-    barrierDismissible: false, //Force user to use buttons
-    builder: (ctx) {
+    barrierDismissible: false,
+    builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
           bool isCreating = false;
@@ -21,7 +21,7 @@ void showCreateOrgDialog(BuildContext context) {
               borderRadius: BorderRadius.circular(16),
             ),
             content: SizedBox(
-              width: 400, // Enforce a nice width
+              width: 400,
               child: Form(
                 key: formKey,
                 child: Column(
@@ -31,6 +31,7 @@ void showCreateOrgDialog(BuildContext context) {
                       controller: nameController,
                       autofocus: true,
                       decoration: const InputDecoration(
+                        hintStyle: TextStyle(color: Colors.black),
                         labelText: "Organization Name",
                         hintText: "e.g. Acme Academy",
                         border: OutlineInputBorder(),
@@ -46,6 +47,7 @@ void showCreateOrgDialog(BuildContext context) {
                       maxLines: 3,
                       decoration: const InputDecoration(
                         labelText: "Description",
+                        hintStyle: TextStyle(color: Colors.black),
                         hintText: "Brief summary of your org...",
                         border: OutlineInputBorder(),
                         filled: true,
@@ -76,7 +78,6 @@ void showCreateOrgDialog(BuildContext context) {
                         if (formKey.currentState!.validate()) {
                           setState(() => isCreating = true);
                           try {
-                            // Access Provider here
                             await Provider.of<OrgProvider>(
                               context,
                               listen: false,

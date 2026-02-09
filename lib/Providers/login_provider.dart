@@ -363,13 +363,22 @@ class LoginProvider extends ChangeNotifier {
       // await GoogleSignIn().signOut(); // Ensure Google Sign out too
 
       final prefs = await SharedPreferences.getInstance();
+
       await prefs.clear();
+      await prefs.reload();
+      prefs.remove('name');
+      prefs.remove('email');
 
       if (!context.mounted) return;
 
-      Navigator.pushReplacement(
-        context,
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => PremiumLoginScreen()),
+      // );
+
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => PremiumLoginScreen()),
+        (_) => false,
       );
     } catch (e) {
       debugPrint("Logout error: $e");

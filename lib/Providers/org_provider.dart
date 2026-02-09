@@ -6,39 +6,64 @@ enum OrgAction { none, switched, exited }
 
 enum MemberFilter { all, teacher, student }
 
+/// Features:
+/// - Organization CRUD operations
+/// - Role-based access control (Admin, Moderator, Teacher, Student)
+/// - Invitation system (Teachers, Students)
+/// - Program/Course/Class management
+/// - Member management
 class OrgProvider extends ChangeNotifier {
-  bool isDisposed = false;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  // ignore: unused_field
-  Map<String, dynamic>? _orgData;
-  Map<String, dynamic>? get orgData => _orgData;
+  // ============================================================
+  // PRIVATE FIELDS
+  // ============================================================
 
-  OrgAction _lastAction = OrgAction.none;
-  OrgAction get lastAction => _lastAction;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  List<Map<String, dynamic>> _teachers = [];
-  List<Map<String, dynamic>> get teachers => _teachers;
-  List<Map<String, dynamic>> _students = [];
-  List<Map<String, dynamic>> get students => _students;
-  String? _currentOrgId;
-  String? _currentUserId;
-  String? _currentOrgName;
+
+  bool isDisposed = false;
   bool _isLoading = false;
   bool _orgIsLoading = false;
   bool _isMembersLoading = false;
-  bool get orgIsLoading => _orgIsLoading;
+  bool _justSwitched = false;
+
+  OrgAction _lastAction = OrgAction.none;
+  MemberFilter _filter = MemberFilter.all;
+
+  String? _currentOrgId;
+  String? _currentUserId;
+  String? _currentOrgName;
+  String? _role;
+
+  Map<String, dynamic>? _orgData;
+  List<Map<String, dynamic>> _userOrgs = [];
+  List<Map<String, dynamic>> _members = [];
+  List<Map<String, dynamic>> _teachers = [];
+  List<Map<String, dynamic>> _students = [];
+
+  // ============================================================
+  // GETTERS
+  // ============================================================
+
   bool get isLoading => _isLoading;
+  bool get orgIsLoading => _orgIsLoading;
   bool get isMembersLoading => _isMembersLoading;
+  bool get justSwitched => _justSwitched;
+  bool get hasOrgLoaded => _orgData != null;
+
+  OrgAction get lastAction => _lastAction;
+  MemberFilter get filter => _filter;
+
   String? get currentOrgId => _currentOrgId;
   String? get currentUserId => _currentUserId;
   String? get currentOrgName => _currentOrgName;
-
-  String? _role;
   String? get role => _role;
+  String get planType => _orgData?['plan']?['planId'] ?? 'none';
 
-  List<Map<String, dynamic>> _userOrgs = [];
+  Map<String, dynamic>? get orgData => _orgData;
   List<Map<String, dynamic>> get userOrgs => _userOrgs;
-  bool get hasOrgLoaded => _orgData != null;
+  List<Map<String, dynamic>> get members => _members;
+  List<Map<String, dynamic>> get teachers => _teachers;
+  List<Map<String, dynamic>> get students => _students;
 
   bool get hasActivePlan {
     try {
@@ -49,80 +74,15 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  String get planType => _orgData?['plan']?['planId'] ?? 'none';
-  //Search members by email
-  Future<List<Map<String, dynamic>>> searchUsersByEmail(String query) async {
-    if (query.isEmpty) return [];
-
-    final snap = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isGreaterThanOrEqualTo: query)
-        .where('email', isLessThanOrEqualTo: '$query\uf8ff')
-        .limit(6)
-        .get();
-
-    return snap.docs.map((d) {
-      final data = d.data();
-      return {
-        'uid': d.id,
-        'email': data['email'],
-        'username': data['displayName'] ?? '',
-        'photoUrl': data['photoUrl'],
-      };
-    }).toList();
-  }
-  //Filter member
-
-  MemberFilter _filter = MemberFilter.all;
-  List<Map<String, dynamic>> _members = [];
-
-  MemberFilter get filter => _filter;
-  List<Map<String, dynamic>> get members => _members;
-
-  void setFilter(MemberFilter filter) {
-    _filter = filter;
-    fetchMembers();
-  }
-
-  Future<void> fetchMembers() async {
-    if (_currentOrgId == null) return;
-
-    try {
-      _isMembersLoading = true;
-      notifyListeners();
-
-      Query query = _db
-          .collection('organizations')
-          .doc(_currentOrgId)
-          .collection('members');
-
-      if (_filter != MemberFilter.all) {
-        query = query.where('role', isEqualTo: _filter.name);
-      }
-
-      final snapshot = await query.get();
-
-      _members = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>?;
-        if (data != null) {
-          return {'id': doc.id, ...data};
-        } else {
-          return {'id': doc.id};
-        }
-      }).toList();
-    } catch (e) {
-      debugPrint('Fetch members error: $e');
-    } finally {
-      _isMembersLoading = false;
-      notifyListeners();
-    }
-  }
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
 
   Future<void> initializeApp() async {
     _isLoading = true;
     notifyListeners();
 
-    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final firebaseUser = _auth.currentUser;
 
     if (firebaseUser == null) {
       _isLoading = false;
@@ -144,9 +104,13 @@ class OrgProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Create a new Organization
+  // ============================================================
+  // ORGANIZATION OPERATIONS
+  // ============================================================
+
+  /// Create a new organization
   Future<void> createOrganization(String name, String description) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = _auth.currentUser!.uid;
 
     final orgRef = await _db.collection('organizations').add({
       'name': name,
@@ -180,11 +144,136 @@ class OrgProvider extends ChangeNotifier {
     await orgRef.collection('members').doc(uid).set({
       'uid': uid,
       'role': 'owner',
-      'email': FirebaseAuth.instance.currentUser!.email,
+      'email': _auth.currentUser!.email,
       'joinedAt': FieldValue.serverTimestamp(),
     });
   }
 
+  /// Fetch all organizations user belongs to
+  Future<void> fetchUserOrgs() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      List<Map<String, dynamic>> orgs = [];
+
+      // Fetch organizations where user is the owner
+      final ownedOrgs = await _db
+          .collection('organizations')
+          .where('ownerId', isEqualTo: user.uid)
+          .get();
+
+      for (var orgDoc in ownedOrgs.docs) {
+        orgs.add({
+          'id': orgDoc.id,
+          'name': orgDoc.get('name') ?? 'Unnamed Organization',
+          'role': 'owner',
+          'joinedAt': orgDoc.get('createdAt'),
+        });
+      }
+
+      // Fetch organizations where user is a member
+      try {
+        final memberships = await _db
+            .collectionGroup('members')
+            .where('uid', isEqualTo: user.uid)
+            .get();
+
+        for (var memberDoc in memberships.docs) {
+          final orgRef = memberDoc.reference.parent.parent;
+          if (orgRef != null) {
+            final orgDoc = await orgRef.get();
+            if (orgDoc.exists) {
+              final existingOrg = orgs.firstWhere(
+                (org) => org['id'] == orgDoc.id,
+                orElse: () => <String, dynamic>{},
+              );
+
+              if (existingOrg.isEmpty) {
+                orgs.add({
+                  'id': orgDoc.id,
+                  'name': orgDoc.get('name') ?? 'Unnamed Organization',
+                  'role': memberDoc.get('role') ?? 'student',
+                  'joinedAt': memberDoc.get('joinedAt'),
+                });
+              }
+            }
+          }
+        }
+      } catch (indexError) {
+        debugPrint(
+          "CollectionGroup query failed (index may not exist): $indexError",
+        );
+      }
+
+      _userOrgs = orgs;
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint("Error fetching orgs: $e");
+    }
+  }
+
+  /// Switch to a different organization
+  Future<void> switchOrganization(
+    String orgId,
+    String name,
+    String role,
+  ) async {
+    _orgIsLoading = true;
+    _justSwitched = false;
+    notifyListeners();
+
+    _currentOrgId = orgId;
+    _currentOrgName = name;
+    _role = role;
+
+    final doc = await _db.collection('organizations').doc(orgId).get();
+    if (!doc.exists) {
+      _orgIsLoading = false;
+      notifyListeners();
+      throw Exception("Organization not found");
+    }
+
+    _orgData = {'id': doc.id, ...doc.data()!};
+
+    _orgIsLoading = false;
+    _justSwitched = true;
+    notifyListeners();
+  }
+
+  /// Leave the current organization
+  Future<void> leaveOrganization() async {
+    if (_orgIsLoading) return;
+
+    _orgIsLoading = true;
+    _lastAction = OrgAction.none;
+    notifyListeners();
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    // TODO: Remove user from org members, clear caches, revoke permissions
+
+    _currentOrgId = null;
+    _currentOrgName = null;
+    _role = null;
+    _orgData = null;
+
+    _orgIsLoading = false;
+    _lastAction = OrgAction.exited;
+    notifyListeners();
+  }
+
+  // ============================================================
+  // PROGRAM/COURSE/CLASS OPERATIONS
+  // ============================================================
+
+  /// Create a program
   Future<void> createProgram(String name, String description) async {
     _requireActivePlan();
 
@@ -202,32 +291,7 @@ class OrgProvider extends ChangeNotifier {
         });
   }
 
-  void _requireActivePlan() {
-    final plan = _orgData?['plan'];
-
-    if (plan == null) {
-      throw Exception("No plan found. Please upgrade.");
-    }
-
-    final status = plan['status'];
-    if (status != 'active' && status != 'trial') {
-      throw Exception("Your plan is inactive. Please upgrade.");
-    }
-
-    final endAt = plan['endAt'];
-    if (endAt != null &&
-        (endAt as Timestamp).toDate().isBefore(DateTime.now())) {
-      throw Exception("Your plan has expired. Please upgrade.");
-    }
-  }
-
-  void _requireFeature(String featureKey) {
-    final features = _orgData?['plan']?['featuresSnapshot'];
-    if (features?[featureKey] != true) {
-      throw Exception("This feature is not included in your plan.");
-    }
-  }
-
+  /// Create a course
   Future<void> createCourse({
     required String title,
     required String description,
@@ -263,6 +327,7 @@ class OrgProvider extends ChangeNotifier {
         });
   }
 
+  /// Create a class
   Future<void> createClass({
     required String courseId,
     required String className,
@@ -293,143 +358,88 @@ class OrgProvider extends ChangeNotifier {
         });
   }
 
-  Future<void> fetchUserOrgs() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  /// Update course status
+  Future<void> updateCourseStatus(String courseId, String newStatus) async {
+    if (_currentOrgId == null) return;
 
-    try {
-      _isLoading = true;
-      notifyListeners();
+    await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('courses')
+        .doc(courseId)
+        .update({'status': newStatus});
 
-      List<Map<String, dynamic>> orgs = [];
-
-      // First, fetch organizations where user is the owner
-
-      //Todo add different screen where the user is a mod or a teacher
-      final ownedOrgs = await _db
-          .collection('organizations')
-          .where('ownerId', isEqualTo: user.uid)
-          .get();
-
-      for (var orgDoc in ownedOrgs.docs) {
-        orgs.add({
-          'id': orgDoc.id,
-          'name': orgDoc.get('name') ?? 'Unnamed Organization',
-          'role': 'owner',
-          'joinedAt': orgDoc.get('createdAt'),
-        });
-      }
-
-      try {
-        final memberships = await _db
-            .collectionGroup('members')
-            .where('uid', isEqualTo: user.uid)
-            .get();
-
-        for (var memberDoc in memberships.docs) {
-          final orgRef = memberDoc.reference.parent.parent;
-          if (orgRef != null) {
-            final orgDoc = await orgRef.get();
-            if (orgDoc.exists) {
-              // Check if we already have this org (from owned orgs)
-              final existingOrg = orgs.firstWhere(
-                (org) => org['id'] == orgDoc.id,
-                orElse: () => <String, dynamic>{},
-              );
-
-              if (existingOrg.isEmpty) {
-                orgs.add({
-                  'id': orgDoc.id,
-                  'name': orgDoc.get('name') ?? 'Unnamed Organization',
-                  'role': memberDoc.get('role') ?? 'student',
-                  'joinedAt': memberDoc.get('joinedAt'),
-                });
-              }
-            }
-          }
-        }
-      } catch (indexError) {
-        debugPrint(
-          "CollectionGroup query failed (index may not exist): $indexError",
-        );
-        debugPrint("Showing only owned organizations for now.");
-      }
-
-      _userOrgs = orgs;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      debugPrint("Error fetching orgs: $e");
-    }
+    notifyListeners();
   }
 
-  bool _justSwitched = false;
-  bool get justSwitched => _justSwitched;
+  // ============================================================
+  // CLASS INTERIOR OPERATIONS
+  // ============================================================
 
-  /// SWITCH
-
-  Future<void> switchOrganization(
-    String orgId,
-    String name,
-    String role,
+  /// Create assignment
+  Future<void> createAssignment(
+    String classId,
+    String title,
+    String description,
+    DateTime dueDate,
   ) async {
-    _orgIsLoading = true;
-    _justSwitched = false;
-    notifyListeners();
-
-    _currentOrgId = orgId;
-    _currentOrgName = name;
-    _role = role;
-
-    final doc = await _db.collection('organizations').doc(orgId).get();
-    if (!doc.exists) {
-      _orgIsLoading = false;
-      notifyListeners();
-      throw Exception("Organization not found");
-    }
-
-    _orgData = {'id': doc.id, ...doc.data()!};
-
-    _orgIsLoading = false;
-    _justSwitched = true;
-    notifyListeners();
+    await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('classes')
+        .doc(classId)
+        .collection('assignments')
+        .add({
+          'title': title,
+          'description': description,
+          'dueDate': dueDate,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
   }
 
-  Future<void> leaveOrganization() async {
-    if (_orgIsLoading) return;
-
-    _orgIsLoading = true;
-    _lastAction = OrgAction.none;
-    notifyListeners();
-
-    // 🔄 Simulate API / Firestore cleanup
-    await Future.delayed(const Duration(seconds: 2));
-
-    // TODO:
-    // - remove user from org members
-    // - clear org-related caches
-    // - revoke permissions if needed
-
-    _currentOrgId = null;
-    _currentOrgName = null;
-    _role = null;
-    _orgData = null;
-
-    _orgIsLoading = false;
-    _lastAction = OrgAction.exited;
-    notifyListeners();
+  /// Create exam
+  Future<void> createExam(
+    String classId,
+    String title,
+    List<Map<String, dynamic>> questions,
+  ) async {
+    await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('classes')
+        .doc(classId)
+        .collection('exams')
+        .add({'title': title, 'questions': questions, 'status': 'scheduled'});
   }
 
-  void clearLastAction() {
-    _lastAction = OrgAction.none;
+  /// Create live session
+  Future<void> createLiveSession({
+    required String classId,
+    required String title,
+    required DateTime startTime,
+    required String meetingLink,
+    required bool enableAiCheatDetection,
+  }) async {
+    await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('classes')
+        .doc(classId)
+        .collection('sessions')
+        .add({
+          'title': title,
+          'startTime': startTime,
+          'meetingLink': meetingLink,
+          'isLive': false,
+          'enableCheatDetection': enableAiCheatDetection,
+        });
   }
 
-  void clearJustSwitched() {
-    _justSwitched = false;
-  }
+  // ============================================================
+  // INVITATION SYSTEM
+  // ============================================================
 
+  /// Invite member (teacher, admin, moderator)
   Future<void> inviteMember(
     String email,
     String role, {
@@ -479,7 +489,7 @@ class OrgProvider extends ChangeNotifier {
             'title': title,
             'body': body,
             'status': 'pending',
-            'invitedBy': _currentUserId, // IMPORTANT
+            'invitedBy': _currentUserId,
             'createdAt': FieldValue.serverTimestamp(),
             'respondedAt': null,
           });
@@ -493,129 +503,10 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  Stream<QuerySnapshot> fetchOrgInvitations({required String status}) {
-    print('Fetching invites');
-    print('OrgId: $_currentOrgId');
-    print('Status: $status');
-
-    if (_currentOrgId == null) {
-      print('OrgId is NULL');
-      return const Stream.empty();
-    }
-
-    return _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('invitations')
-        .where('status', isEqualTo: status)
-        .snapshots();
-  }
-
-  ///Invitations User
-  Stream<QuerySnapshot> fetchMyInvitations(String email) {
-    return _db
-        .collectionGroup('invitations')
-        .where('email', isEqualTo: email)
-        .where('status', isEqualTo: 'pending')
-        .snapshots();
-  }
-
-  Future<void> updateStudentStatus(String studentId, String status) async {
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('students')
-        .doc(studentId)
-        .update({'status': status});
-  }
-
-  // Update Course Status (e.g., Live, Archived)
-  Future<void> updateCourseStatus(String courseId, String newStatus) async {
-    if (_currentOrgId == null) return;
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('courses')
-        .doc(courseId)
-        .update({'status': newStatus});
-    notifyListeners();
-  }
-
-  // --- 4. Class Interiors: Assignments, Exams, Live Sessions ---
-
-  // Create Assignment
-  Future<void> createAssignment(
-    String classId,
-    String title,
-    String description,
-    DateTime dueDate,
-  ) async {
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('classes')
-        .doc(classId)
-        .collection('assignments')
-        .add({
-          'title': title,
-          'description': description,
-          'dueDate': dueDate,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-  }
-
-  // Create Exam (with basic questions array)
-  Future<void> createExam(
-    String classId,
-    String title,
-    List<Map<String, dynamic>> questions,
-  ) async {
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('classes')
-        .doc(classId)
-        .collection('exams')
-        .add({
-          'title': title,
-          'questions':
-              questions, // Array of {question: "", options: [], correct: ""}
-          'status': 'scheduled',
-        });
-  }
-
-  // Schedule Live Session (With AI Cheat Detection Toggle)
-  Future<void> createLiveSession({
+  /// Invite student to class
+  Future<void> inviteStudent(
+    String email, {
     required String classId,
-    required String title,
-    required DateTime startTime,
-    required String meetingLink,
-    required bool enableAiCheatDetection,
-  }) async {
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('classes')
-        .doc(classId)
-        .collection('sessions')
-        .add({
-          'title': title,
-          'startTime': startTime,
-          'meetingLink': meetingLink,
-          'isLive': false,
-          // Admin controls this. If true, student app activates camera/AI logic
-          'enableCheatDetection': enableAiCheatDetection,
-        });
-  }
-
-  // --- 5. People (Teachers/Students) ---
-
-  ///Invitation Org
-
-  Future<void> inviteStudent({
-    String? email,
-    required List<String> courseIds,
-    String? classId,
     required String title,
     required String body,
   }) async {
@@ -636,22 +527,38 @@ class OrgProvider extends ChangeNotifier {
         throw Exception("User with this email does not exist");
       }
 
-      // 2. Prevent duplicate pending invite
+      // 2. Get class details
+      final classDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .doc(classId)
+          .get();
+
+      if (!classDoc.exists) {
+        throw Exception("Class not found");
+      }
+
+      final className = classDoc.data()?['name'];
+      final courseId = classDoc.data()?['courseId'];
+
+      // 3. Prevent duplicate pending invite
       final existingInvite = await _db
           .collection('organizations')
           .doc(_currentOrgId)
           .collection('invitations')
           .where('email', isEqualTo: email)
           .where('role', isEqualTo: 'student')
+          .where('classId', isEqualTo: classId)
           .where('status', isEqualTo: 'pending')
           .limit(1)
           .get();
 
       if (existingInvite.docs.isNotEmpty) {
-        throw Exception("Student invitation already pending");
+        throw Exception("Invitation already pending for this class");
       }
 
-      // 3. Create invitation with student-specific fields
+      // 4. Create invitation
       await _db
           .collection('organizations')
           .doc(_currentOrgId)
@@ -660,17 +567,15 @@ class OrgProvider extends ChangeNotifier {
             'orgId': _currentOrgId,
             'email': email,
             'role': 'student',
+            'classId': classId,
+            'courseId': courseId,
+            'className': className,
             'title': title,
             'body': body,
             'status': 'pending',
             'invitedBy': _currentUserId,
             'createdAt': FieldValue.serverTimestamp(),
             'respondedAt': null,
-
-            // Student-specific fields
-            'courseIds': courseIds, // Courses student will have access to
-            'classId': classId, // Optional specific class assignment
-            'enrollmentType': classId != null ? 'class' : 'course',
           });
 
       _isLoading = false;
@@ -682,6 +587,30 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
+  /// Fetch user's pending invitations
+  Stream<QuerySnapshot> fetchMyInvitations(String email) {
+    return _db
+        .collectionGroup('invitations')
+        .where('email', isEqualTo: email)
+        .where('status', isEqualTo: 'pending')
+        .snapshots();
+  }
+
+  /// Fetch organization invitations by status
+  Stream<QuerySnapshot> fetchOrgInvitations({required String status}) {
+    if (_currentOrgId == null) {
+      return const Stream.empty();
+    }
+
+    return _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('invitations')
+        .where('status', isEqualTo: status)
+        .snapshots();
+  }
+
+  /// Fetch pending invitations as list
   Future<List<Map<String, dynamic>>> fetchPendingInvitations() async {
     if (_currentOrgId == null) return [];
 
@@ -704,17 +633,7 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> cancelInvitation({required String inviteId}) async {
-    if (_currentOrgId == null) return;
-
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('invitations')
-        .doc(inviteId)
-        .delete();
-  }
-
+  /// Respond to invitation (accept/reject)
   Future<void> respondToInvitation(String invitationId, bool accepted) async {
     if (_currentOrgId == null) return;
 
@@ -753,15 +672,12 @@ class OrgProvider extends ChangeNotifier {
         final userId = userQuery.docs.first.id;
 
         if (role == 'student') {
-          // Handle student acceptance with course enrollment
-          await _addStudentToOrg(
+          await _addStudentToClass(
             userId: userId,
             email: email,
-            courseIds: List<String>.from(inviteData['courseIds'] ?? []),
             classId: inviteData['classId'],
           );
         } else {
-          // Handle teacher/other role acceptance
           await _addMemberToOrg(userId: userId, email: email, role: role);
         }
       }
@@ -772,158 +688,91 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  /// Private helper: Add student to organization with course enrollments
-  Future<void> _addStudentToOrg({
-    required String userId,
-    required String email,
-    required List<String> courseIds,
-    String? classId,
-  }) async {
+  /// Cancel invitation
+  Future<void> cancelInvitation({required String inviteId}) async {
     if (_currentOrgId == null) return;
 
-    final batch = _db.batch();
-
-    // 1. Add to organization's students subcollection
-    final studentRef = _db
+    await _db
         .collection('organizations')
         .doc(_currentOrgId)
-        .collection('students')
-        .doc(userId);
+        .collection('invitations')
+        .doc(inviteId)
+        .delete();
 
-    batch.set(studentRef, {
-      'userId': userId,
-      'email': email,
-      'role': 'student',
-      'status': 'active',
-      'joinedAt': FieldValue.serverTimestamp(),
-      'courseIds': courseIds,
-      'classId': classId,
-    });
+    safeChangeNotifier();
+  }
 
-    // 2. Create course enrollments
-    for (final courseId in courseIds) {
-      final enrollmentRef = _db
+  // ============================================================
+  // MEMBER MANAGEMENT
+  // ============================================================
+
+  /// Search users by email
+  Future<List<Map<String, dynamic>>> searchUsersByEmail(String query) async {
+    if (query.isEmpty) return [];
+
+    final snap = await _db
+        .collection('users')
+        .where('email', isGreaterThanOrEqualTo: query)
+        .where('email', isLessThanOrEqualTo: '$query\uf8ff')
+        .limit(6)
+        .get();
+
+    return snap.docs.map((d) {
+      final data = d.data();
+      return {
+        'uid': d.id,
+        'email': data['email'],
+        'username': data['username'] ?? data['name'] ?? '',
+        'photoUrl': data['photo'],
+      };
+    }).toList();
+  }
+
+  /// Set member filter
+  void setFilter(MemberFilter filter) {
+    _filter = filter;
+    fetchMembers();
+  }
+
+  /// Fetch members with filter
+  Future<void> fetchMembers() async {
+    if (_currentOrgId == null) return;
+
+    try {
+      _isMembersLoading = true;
+      notifyListeners();
+
+      Query query = _db
           .collection('organizations')
           .doc(_currentOrgId)
-          .collection('courses')
-          .doc(courseId)
-          .collection('enrollments')
-          .doc(userId);
+          .collection('members');
 
-      batch.set(enrollmentRef, {
-        'userId': userId,
-        'email': email,
-        'enrolledAt': FieldValue.serverTimestamp(),
-        'status': 'active',
-      });
+      if (_filter != MemberFilter.all) {
+        query = query.where('role', isEqualTo: _filter.name);
+      }
+
+      final snapshot = await query.get();
+
+      _members = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          return {'id': doc.id, ...data};
+        } else {
+          return {'id': doc.id};
+        }
+      }).toList();
+    } catch (e) {
+      debugPrint('Fetch members error: $e');
+    } finally {
+      _isMembersLoading = false;
+      notifyListeners();
     }
-
-    // 3. Add to class roster if specific class assigned
-    if (classId != null) {
-      final classStudentRef = _db
-          .collection('organizations')
-          .doc(_currentOrgId)
-          .collection('classes')
-          .doc(classId)
-          .collection('students')
-          .doc(userId);
-
-      batch.set(classStudentRef, {
-        'userId': userId,
-        'email': email,
-        'joinedAt': FieldValue.serverTimestamp(),
-        'status': 'active',
-      });
-    }
-
-    // 4. Add organization to user's organizations
-    final userOrgRef = _db
-        .collection('users')
-        .doc(userId)
-        .collection('organizations')
-        .doc(_currentOrgId);
-
-    batch.set(userOrgRef, {
-      'organizationId': _currentOrgId,
-      'organizationName': _currentOrgName,
-      'role': 'student',
-      'joinedAt': FieldValue.serverTimestamp(),
-      'courseIds': courseIds,
-      'classId': classId,
-    });
-
-    await batch.commit();
   }
 
-  /// Private helper: Add teacher/other member to organization
-  /// (Keep your existing logic here)
-  Future<void> _addMemberToOrg({
-    required String userId,
-    required String email,
-    required String role,
-  }) async {
-    if (_currentOrgId == null) return;
-
-    // Add to appropriate subcollection based on role
-    final collectionName = role == 'teacher' ? 'teachers' : 'members';
-
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection(collectionName)
-        .doc(userId)
-        .set({
-          'userId': userId,
-          'email': email,
-          'role': role,
-          'status': 'active',
-          'joinedAt': FieldValue.serverTimestamp(),
-        });
-
-    // Add organization to user's organizations
-    await _db
-        .collection('users')
-        .doc(userId)
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .set({
-          'organizationId': _currentOrgId,
-          'organizationName': _currentOrgName,
-          'role': role,
-          'joinedAt': FieldValue.serverTimestamp(),
-        });
-  }
-
-  /// Cancel/Delete a pending invitation
-  // Future<void> cancelInvitation(String invitationId) async {
-  //   if (_currentOrgId == null) return;
-  //
-  //   try {
-  //     await _db
-  //         .collection('organizations')
-  //         .doc(_currentOrgId)
-  //         .collection('invitations')
-  //         .doc(invitationId)
-  //         .delete();
-  //
-  //     safeChangeNotifier();
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
-  // Invite Teacher (Request to work)
-  Future<void> inviteTeacher(String email) async {
-    if (_currentOrgId == null) return;
-    await _db
-        .collection('organizations')
-        .doc(_currentOrgId)
-        .collection('invites')
-        .add({'email': email, 'role': 'teacher', 'status': 'pending'});
-  }
-
-  /// Fetch members of the current organization
+  /// Fetch organization members
   Future<List<Map<String, dynamic>>> fetchOrgMembers() async {
     if (_currentOrgId == null) return [];
+
     try {
       final query = await _db
           .collection('organizations')
@@ -938,14 +787,14 @@ class OrgProvider extends ChangeNotifier {
     }
   }
 
-  /// Teacher Filter Screen
+  /// Fetch teachers
   Future<void> fetchTeacher(String orgId) async {
     final snapshot = await _db
         .collection('organizations')
         .doc(orgId)
         .collection('members')
         .where('role', isEqualTo: 'teacher')
-        .orderBy('createdAt', descending: true)
+        .orderBy('joinedAt', descending: true)
         .get();
 
     _teachers = snapshot.docs.map((doc) {
@@ -955,14 +804,14 @@ class OrgProvider extends ChangeNotifier {
     safeChangeNotifier();
   }
 
-  /// Student Filter Screen
+  /// Fetch students
   Future<void> fetchStudents(String orgId) async {
     final snapshot = await _db
         .collection('organizations')
         .doc(orgId)
         .collection('members')
         .where('role', isEqualTo: 'student')
-        .orderBy('createdAt', descending: true)
+        .orderBy('joinedAt', descending: true)
         .get();
 
     _students = snapshot.docs.map((doc) {
@@ -970,6 +819,737 @@ class OrgProvider extends ChangeNotifier {
     }).toList();
 
     safeChangeNotifier();
+  }
+
+  /// Update student status
+  Future<void> updateStudentStatus(String studentId, String status) async {
+    await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('students')
+        .doc(studentId)
+        .update({'status': status});
+  }
+
+  // ============================================================
+  // ACCESS CONTROL & ROLE-BASED QUERIES
+  // ============================================================
+
+  /// Get user's role in current organization
+  Future<String?> getUserRoleInOrg(String userId) async {
+    if (_currentOrgId == null) return null;
+
+    try {
+      // Check if member (admin, moderator, teacher)
+      final memberDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .doc(userId)
+          .get();
+
+      if (memberDoc.exists) {
+        return memberDoc.data()?['role'];
+      }
+
+      // Check if student in any class
+      final classesSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .get();
+
+      for (final classDoc in classesSnapshot.docs) {
+        final memberDoc = await classDoc.reference
+            .collection('members')
+            .doc(userId)
+            .get();
+
+        if (memberDoc.exists && memberDoc.data()?['role'] == 'student') {
+          return 'student';
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Error getting user role: $e');
+      return null;
+    }
+  }
+
+  /// Check if user can access a course
+  Future<bool> canAccessCourse(String userId, String courseId) async {
+    if (_currentOrgId == null) return false;
+
+    final role = await getUserRoleInOrg(userId);
+
+    // Admin and Moderator can access all courses
+    if (role == 'admin' || role == 'moderator') return true;
+
+    // Teachers: Check if assigned to this course
+    if (role == 'teacher') {
+      final teacherDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('courses')
+          .doc(courseId)
+          .collection('teachers')
+          .doc(userId)
+          .get();
+
+      return teacherDoc.exists;
+    }
+
+    // Students: Check if enrolled in any class for this course
+    if (role == 'student') {
+      return await studentHasAccessToCourse(userId, courseId);
+    }
+
+    return false;
+  }
+
+  /// Check if user can access a class
+  Future<bool> canAccessClass(String userId, String classId) async {
+    if (_currentOrgId == null) return false;
+
+    final role = await getUserRoleInOrg(userId);
+
+    // Admin and Moderator can access all classes
+    if (role == 'admin' || role == 'moderator') return true;
+
+    // Check if member of this class
+    final memberDoc = await _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('classes')
+        .doc(classId)
+        .collection('members')
+        .doc(userId)
+        .get();
+
+    if (memberDoc.exists) return true;
+
+    // Check if teacher is primary teacher
+    if (role == 'teacher') {
+      final classDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .doc(classId)
+          .get();
+
+      return classDoc.data()?['teacherId'] == userId;
+    }
+
+    return false;
+  }
+
+  /// Check if user can edit course
+  Future<bool> canEditCourse(String userId, String courseId) async {
+    final role = await getUserRoleInOrg(userId);
+
+    // Admins can edit all courses
+    if (role == 'admin') return true;
+
+    // Teachers can edit their assigned courses
+    if (role == 'teacher') {
+      final teacherDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('courses')
+          .doc(courseId)
+          .collection('teachers')
+          .doc(userId)
+          .get();
+
+      return teacherDoc.exists && teacherDoc.data()?['canEdit'] == true;
+    }
+
+    return false;
+  }
+
+  /// Check if student has access to course via class membership
+  Future<bool> studentHasAccessToCourse(String userId, String courseId) async {
+    if (_currentOrgId == null) return false;
+
+    try {
+      // Get all classes for this course
+      final classesSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .where('courseId', isEqualTo: courseId)
+          .get();
+
+      // Check if student is in any of these classes
+      for (final classDoc in classesSnapshot.docs) {
+        final memberDoc = await classDoc.reference
+            .collection('members')
+            .doc(userId)
+            .get();
+
+        if (memberDoc.exists &&
+            memberDoc.data()?['role'] == 'student' &&
+            memberDoc.data()?['status'] == 'active') {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Error checking course access: $e');
+      return false;
+    }
+  }
+
+  /// Get all classes a teacher is assigned to
+  Future<List<Map<String, dynamic>>> getTeacherClasses(String teacherId) async {
+    if (_currentOrgId == null) return [];
+
+    try {
+      final classes = <Map<String, dynamic>>[];
+      final addedIds = <String>{};
+
+      // Get classes where teacher is primary teacher
+      final primaryClasses = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .where('teacherId', isEqualTo: teacherId)
+          .get();
+
+      for (final doc in primaryClasses.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        data['isPrimary'] = true;
+        classes.add(data);
+        addedIds.add(doc.id);
+      }
+
+      // Get classes where teacher is additional member
+      final allClasses = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .get();
+
+      for (final classDoc in allClasses.docs) {
+        if (addedIds.contains(classDoc.id)) continue;
+
+        final memberDoc = await classDoc.reference
+            .collection('members')
+            .doc(teacherId)
+            .get();
+
+        if (memberDoc.exists && memberDoc.data()?['role'] == 'teacher') {
+          final data = classDoc.data();
+          data['id'] = classDoc.id;
+          data['isPrimary'] = false;
+          classes.add(data);
+        }
+      }
+
+      return classes;
+    } catch (e) {
+      debugPrint('Error getting teacher classes: $e');
+      return [];
+    }
+  }
+
+  /// Get all courses a teacher is assigned to
+  Future<List<Map<String, dynamic>>> getTeacherCourses(String teacherId) async {
+    if (_currentOrgId == null) return [];
+
+    try {
+      final courses = <Map<String, dynamic>>[];
+
+      final coursesSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('courses')
+          .get();
+
+      for (final courseDoc in coursesSnapshot.docs) {
+        final teacherDoc = await courseDoc.reference
+            .collection('teachers')
+            .doc(teacherId)
+            .get();
+
+        if (teacherDoc.exists) {
+          final data = courseDoc.data();
+          data['id'] = courseDoc.id;
+          data['permissions'] = teacherDoc.data();
+          courses.add(data);
+        }
+      }
+
+      return courses;
+    } catch (e) {
+      debugPrint('Error getting teacher courses: $e');
+      return [];
+    }
+  }
+
+  /// Get all students across all classes a teacher teaches
+  Future<List<Map<String, dynamic>>> getTeacherStudents(
+    String teacherId,
+  ) async {
+    if (_currentOrgId == null) return [];
+
+    try {
+      final students = <Map<String, dynamic>>[];
+      final studentIds = <String>{};
+
+      final classes = await getTeacherClasses(teacherId);
+
+      for (final classData in classes) {
+        final classId = classData['id'];
+        final classStudents = await getClassStudents(classId);
+
+        for (final student in classStudents) {
+          final studentId = student['uid'];
+          if (!studentIds.contains(studentId)) {
+            studentIds.add(studentId);
+            student['classId'] = classId;
+            student['className'] = classData['name'];
+            students.add(student);
+          }
+        }
+      }
+
+      return students;
+    } catch (e) {
+      debugPrint('Error getting teacher students: $e');
+      return [];
+    }
+  }
+
+  /// Get all students in a class
+  Future<List<Map<String, dynamic>>> getClassStudents(String classId) async {
+    if (_currentOrgId == null) return [];
+
+    try {
+      final studentsSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .doc(classId)
+          .collection('members')
+          .where('role', isEqualTo: 'student')
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      final students = <Map<String, dynamic>>[];
+
+      for (final doc in studentsSnapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        // Optionally fetch user details
+        try {
+          final userDoc = await _db.collection('users').doc(doc.id).get();
+
+          if (userDoc.exists) {
+            data['userData'] = userDoc.data();
+          }
+        } catch (e) {
+          debugPrint('Error fetching user data for ${doc.id}: $e');
+        }
+
+        students.add(data);
+      }
+
+      return students;
+    } catch (e) {
+      debugPrint('Error getting class students: $e');
+      return [];
+    }
+  }
+
+  /// Get all classes a student is enrolled in
+  Future<List<Map<String, dynamic>>> getStudentClasses(String userId) async {
+    if (_currentOrgId == null) return [];
+
+    try {
+      final classes = <Map<String, dynamic>>[];
+
+      final classesSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('classes')
+          .get();
+
+      for (final classDoc in classesSnapshot.docs) {
+        final memberDoc = await classDoc.reference
+            .collection('members')
+            .doc(userId)
+            .get();
+
+        if (memberDoc.exists && memberDoc.data()?['role'] == 'student') {
+          final classData = classDoc.data();
+          classData['id'] = classDoc.id;
+          classData['memberData'] = memberDoc.data();
+          classes.add(classData);
+        }
+      }
+
+      return classes;
+    } catch (e) {
+      debugPrint('Error getting student classes: $e');
+      return [];
+    }
+  }
+
+  /// Get all programs (admin/moderator only)
+  Future<List<Map<String, dynamic>>> getAllPrograms(String userId) async {
+    if (_currentOrgId == null) return [];
+
+    final role = await getUserRoleInOrg(userId);
+
+    if (role != 'admin' && role != 'moderator') {
+      throw Exception('Insufficient permissions');
+    }
+
+    try {
+      final programsSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('programs')
+          .get();
+
+      return programsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting programs: $e');
+      return [];
+    }
+  }
+
+  /// Get all courses (admin/moderator only)
+  Future<List<Map<String, dynamic>>> getAllCourses(String userId) async {
+    if (_currentOrgId == null) return [];
+
+    final role = await getUserRoleInOrg(userId);
+
+    if (role != 'admin' && role != 'moderator') {
+      throw Exception('Insufficient permissions');
+    }
+
+    try {
+      final coursesSnapshot = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('courses')
+          .get();
+
+      return coursesSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting courses: $e');
+      return [];
+    }
+  }
+
+  /// Assign teacher to course (admin only)
+  Future<void> assignTeacherToCourse({
+    required String teacherId,
+    required String courseId,
+    bool canEdit = true,
+    bool canGrade = true,
+  }) async {
+    if (_currentOrgId == null) return;
+
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) throw Exception('Not authenticated');
+
+    final role = await getUserRoleInOrg(currentUserId);
+    if (role != 'admin') {
+      throw Exception('Only admins can assign teachers');
+    }
+
+    try {
+      _isLoading = true;
+      safeChangeNotifier();
+
+      final teacherDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .doc(teacherId)
+          .get();
+
+      if (!teacherDoc.exists || teacherDoc.data()?['role'] != 'teacher') {
+        throw Exception('User is not a teacher in this organization');
+      }
+
+      final teacherEmail = teacherDoc.data()?['email'];
+
+      await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('courses')
+          .doc(courseId)
+          .collection('teachers')
+          .doc(teacherId)
+          .set({
+            'uid': teacherId,
+            'email': teacherEmail,
+            'canEdit': canEdit,
+            'canGrade': canGrade,
+            'assignedAt': FieldValue.serverTimestamp(),
+            'assignedBy': currentUserId,
+          });
+
+      _isLoading = false;
+      safeChangeNotifier();
+    } catch (e) {
+      _isLoading = false;
+      safeChangeNotifier();
+      rethrow;
+    }
+  }
+
+  /// Assign teacher to class (admin only)
+  Future<void> assignTeacherToClass({
+    required String teacherId,
+    required String classId,
+    bool isPrimary = false,
+  }) async {
+    if (_currentOrgId == null) return;
+
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) throw Exception('Not authenticated');
+
+    final role = await getUserRoleInOrg(currentUserId);
+    if (role != 'admin') {
+      throw Exception('Only admins can assign teachers');
+    }
+
+    try {
+      _isLoading = true;
+      safeChangeNotifier();
+
+      final teacherDoc = await _db
+          .collection('organizations')
+          .doc(_currentOrgId)
+          .collection('members')
+          .doc(teacherId)
+          .get();
+
+      if (!teacherDoc.exists || teacherDoc.data()?['role'] != 'teacher') {
+        throw Exception('User is not a teacher in this organization');
+      }
+
+      final teacherEmail = teacherDoc.data()?['email'];
+      final batch = _db.batch();
+
+      if (isPrimary) {
+        final classRef = _db
+            .collection('organizations')
+            .doc(_currentOrgId)
+            .collection('classes')
+            .doc(classId);
+
+        batch.update(classRef, {
+          'teacherId': teacherId,
+          'teacherEmail': teacherEmail,
+        });
+      } else {
+        final memberRef = _db
+            .collection('organizations')
+            .doc(_currentOrgId)
+            .collection('classes')
+            .doc(classId)
+            .collection('members')
+            .doc(teacherId);
+
+        batch.set(memberRef, {
+          'uid': teacherId,
+          'email': teacherEmail,
+          'role': 'teacher',
+          'status': 'active',
+          'joinedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+
+      _isLoading = false;
+      safeChangeNotifier();
+    } catch (e) {
+      _isLoading = false;
+      safeChangeNotifier();
+      rethrow;
+    }
+  }
+
+  /// Get dashboard data based on user role
+  Future<Map<String, dynamic>> getDashboardData(String userId) async {
+    if (_currentOrgId == null) {
+      return {'role': null, 'data': null};
+    }
+
+    final role = await getUserRoleInOrg(userId);
+
+    switch (role) {
+      case 'admin':
+      case 'moderator':
+        return {
+          'role': role,
+          'programs': await getAllPrograms(userId),
+          'courses': await getAllCourses(userId),
+        };
+
+      case 'teacher':
+        return {
+          'role': role,
+          'classes': await getTeacherClasses(userId),
+          'courses': await getTeacherCourses(userId),
+          'students': await getTeacherStudents(userId),
+        };
+
+      case 'student':
+        return {'role': role, 'classes': await getStudentClasses(userId)};
+
+      default:
+        return {'role': null, 'data': null};
+    }
+  }
+
+  // ============================================================
+  // PRIVATE HELPER METHODS
+  // ============================================================
+
+  /// Add student to class
+  Future<void> _addStudentToClass({
+    required String userId,
+    required String email,
+    required String classId,
+  }) async {
+    if (_currentOrgId == null) return;
+
+    final batch = _db.batch();
+
+    // Add to class members
+    final classMemberRef = _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('classes')
+        .doc(classId)
+        .collection('members')
+        .doc(userId);
+
+    batch.set(classMemberRef, {
+      'uid': userId,
+      'email': email,
+      'role': 'student',
+      'status': 'active',
+      'joinedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Add organization to user's organizations
+    final userOrgRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('organizations')
+        .doc(_currentOrgId);
+
+    batch.set(userOrgRef, {
+      'organizationId': _currentOrgId,
+      'organizationName': _currentOrgName,
+      'role': 'student',
+      'joinedAt': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+  }
+
+  /// Add member to organization
+  Future<void> _addMemberToOrg({
+    required String userId,
+    required String email,
+    required String role,
+  }) async {
+    if (_currentOrgId == null) return;
+
+    final batch = _db.batch();
+
+    // Add to members collection
+    final memberRef = _db
+        .collection('organizations')
+        .doc(_currentOrgId)
+        .collection('members')
+        .doc(userId);
+
+    batch.set(memberRef, {
+      'uid': userId,
+      'email': email,
+      'role': role,
+      'status': 'active',
+      'joinedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Add organization to user's organizations
+    final userOrgRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('organizations')
+        .doc(_currentOrgId);
+
+    batch.set(userOrgRef, {
+      'organizationId': _currentOrgId,
+      'organizationName': _currentOrgName,
+      'role': role,
+      'joinedAt': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+  }
+
+  /// Require active plan
+  void _requireActivePlan() {
+    final plan = _orgData?['plan'];
+
+    if (plan == null) {
+      throw Exception("No plan found. Please upgrade.");
+    }
+
+    final status = plan['status'];
+    if (status != 'active' && status != 'trial') {
+      throw Exception("Your plan is inactive. Please upgrade.");
+    }
+
+    final endAt = plan['endAt'];
+    if (endAt != null &&
+        (endAt as Timestamp).toDate().isBefore(DateTime.now())) {
+      throw Exception("Your plan has expired. Please upgrade.");
+    }
+  }
+
+  /// Require specific feature
+  void _requireFeature(String featureKey) {
+    final features = _orgData?['plan']?['featuresSnapshot'];
+    if (features?[featureKey] != true) {
+      throw Exception("This feature is not included in your plan.");
+    }
+  }
+
+  // ============================================================
+  // UTILITY METHODS
+  // ============================================================
+
+  void clearLastAction() {
+    _lastAction = OrgAction.none;
+  }
+
+  void clearJustSwitched() {
+    _justSwitched = false;
   }
 
   void safeChangeNotifier() {

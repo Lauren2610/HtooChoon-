@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:htoochoon_flutter/Providers/notificaton_provider.dart';
+import 'package:htoochoon_flutter/Providers/invitation_provider.dart';
+
 import 'package:provider/provider.dart';
 
 class InvitationsTab extends StatelessWidget {
@@ -9,7 +10,7 @@ class InvitationsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NotificationProvider>(
+    return Consumer<InvitationProvider>(
       builder: (context, provider, child) {
         if (provider.invitations.isEmpty) {
           return const Center(child: Text("No pending invitations"));
@@ -59,7 +60,7 @@ class _InvitationTileState extends State<InvitationTile> {
                   setState(() => _isProcessing = true);
 
                   try {
-                    await context.read<NotificationProvider>().acceptInvitation(
+                    await context.read<InvitationProvider>().acceptInvitation(
                       orgId: data['orgId'],
                       inviteId: widget.invite.id,
                       userId: user.uid,
