@@ -7,13 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class InvitationProvider extends ChangeNotifier {
   late TabController tabController;
   bool isDisposed = false;
-
+  bool _inviteIsLoading = false;
   void safeChangeNotifier() {
     if (!isDisposed) {
       notifyListeners();
     }
   }
 
+  bool get inviteIsLoading => _inviteIsLoading;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   List<QueryDocumentSnapshot> invitations = [];
@@ -67,6 +68,8 @@ class InvitationProvider extends ChangeNotifier {
     required String userId,
     required String email,
   }) async {
+    _inviteIsLoading = true;
+    safeChangeNotifier();
     final batch = _db.batch();
 
     // 1. Get invitation data
@@ -107,13 +110,29 @@ class InvitationProvider extends ChangeNotifier {
         'status': 'active',
         'joinedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      _inviteIsLoading = false;
+      safeChangeNotifier();
     } else if (role == 'student') {
-      // Students MUST have classId
       if (classId == null) {
         throw Exception('Student invitation missing classId');
       }
 
-      // Add to class members
+      //ORG MEMBER
+      final orgMemberRef = _db
+          .collection('organizations')
+          .doc(orgId)
+          .collection('members')
+          .doc(userId);
+
+      batch.set(orgMemberRef, {
+        'uid': userId,
+        'email': email,
+        'role': 'student',
+        'status': 'active',
+        'joinedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      //CLASS MEMBER
       final classMemberRef = _db
           .collection('organizations')
           .doc(orgId)
@@ -124,28 +143,20 @@ class InvitationProvider extends ChangeNotifier {
 
       batch.set(classMemberRef, {
         'uid': userId,
-        'email': email,
         'role': 'student',
-        'status': 'active',
+        'classId': classId,
+        'organizationId': orgId, // useful later
         'joinedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      _inviteIsLoading = false;
 
-      // Optional: Add to user's enrolled classes for quick lookup
-      final userClassRef = _db
-          .collection('users')
-          .doc(userId)
-          .collection('enrolledClasses')
-          .doc(classId);
-
-      batch.set(userClassRef, {
-        'organizationId': orgId,
-        'classId': classId,
-        'role': 'student',
-        'joinedAt': FieldValue.serverTimestamp(),
-      });
+      safeChangeNotifier();
     }
 
     await batch.commit();
+    _inviteIsLoading = false;
+
+    safeChangeNotifier();
   }
 
   Future<void> rejectInvitation({
@@ -161,6 +172,7 @@ class InvitationProvider extends ChangeNotifier {
           'status': 'rejected',
           'respondedAt': FieldValue.serverTimestamp(),
         });
+    safeChangeNotifier();
   }
 
   @override

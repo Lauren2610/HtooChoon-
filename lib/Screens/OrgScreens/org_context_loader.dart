@@ -40,7 +40,7 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () => showCreateOrgDialog(context),
+                  onPressed: () => showCreateOrgDialog(context, orgProvider),
                   icon: const Icon(Icons.add_circle_outline, size: 22),
                 ),
                 const SizedBox(width: AppTheme.spaceXs),
@@ -84,7 +84,7 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
             ),
             actions: [
               IconButton(
-                onPressed: () => showCreateOrgDialog(context),
+                onPressed: () => showCreateOrgDialog(context, orgProvider),
                 icon: const Icon(Icons.add_circle_outline, size: 22),
               ),
               const SizedBox(width: AppTheme.spaceXs),
@@ -124,7 +124,7 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
                 ),
                 const SizedBox(height: AppTheme.spaceLg),
                 ElevatedButton.icon(
-                  onPressed: () => showCreateOrgDialog(context),
+                  onPressed: () => showCreateOrgDialog(context, orgProvider),
                   icon: const Icon(Icons.add, size: 20),
                   label: const Text('Create Organization'),
                 ),

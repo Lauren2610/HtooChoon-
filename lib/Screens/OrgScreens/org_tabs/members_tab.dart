@@ -20,6 +20,7 @@ class MemberFilterScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _filterChip(context, 'All', MemberFilter.all),
+              _filterChip(context, 'Admin', MemberFilter.owner),
               _filterChip(context, 'Teachers', MemberFilter.teacher),
               _filterChip(context, 'Students', MemberFilter.student),
             ],
@@ -143,6 +144,8 @@ class MemberCard extends StatelessWidget {
     switch (role) {
       case 'teacher':
         return Colors.blue;
+      case 'admin':
+        return Colors.orange;
       case 'student':
         return Colors.green;
       case 'owner':

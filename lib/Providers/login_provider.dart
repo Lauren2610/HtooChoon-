@@ -368,9 +368,9 @@ class LoginProvider extends ChangeNotifier {
       await prefs.reload();
       prefs.remove('name');
       prefs.remove('email');
-
+      safeChangeNotifier();
       if (!context.mounted) return;
-
+      safeChangeNotifier();
       // Navigator.pushReplacement(
       //   context,
       //   MaterialPageRoute(builder: (_) => PremiumLoginScreen()),

@@ -99,7 +99,6 @@ class InvitationCard extends StatefulWidget {
 }
 
 class _InvitationCardState extends State<InvitationCard> {
-  bool _isProcessing = false;
   bool _isAccepted = false;
 
   @override
@@ -186,19 +185,15 @@ class _InvitationCardState extends State<InvitationCard> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isProcessing
+                    onPressed:
+                        context.read<InvitationProvider>().inviteIsLoading
                         ? null
                         : () async {
-                            setState(() => _isProcessing = true);
-
                             await context
                                 .read<InvitationProvider>()
                                 .rejectInvitation(
                                   inviteId: widget.invite.id,
                                   orgId: data['orgId'],
-                                )
-                                .whenComplete(
-                                  () => setState(() => _isProcessing = false),
                                 );
                           },
                     child: const Text('Decline'),
@@ -207,11 +202,10 @@ class _InvitationCardState extends State<InvitationCard> {
                 const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isProcessing
+                    onPressed:
+                        context.read<InvitationProvider>().inviteIsLoading
                         ? null
                         : () async {
-                            setState(() => _isProcessing = true);
-
                             try {
                               await context
                                   .read<InvitationProvider>()
@@ -229,8 +223,6 @@ class _InvitationCardState extends State<InvitationCard> {
                                   ),
                                 ),
                               );
-                            } finally {
-                              setState(() => _isProcessing = false);
                             }
                           },
                     child: const Text('Accept'),

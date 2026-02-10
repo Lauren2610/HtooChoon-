@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 enum OrgAction { none, switched, exited }
 
-enum MemberFilter { all, teacher, student }
+enum MemberFilter { all, owner, teacher, student }
 
 /// Features:
 /// - Organization CRUD operations
@@ -25,7 +25,7 @@ class OrgProvider extends ChangeNotifier {
   bool _orgIsLoading = false;
   bool _isMembersLoading = false;
   bool _justSwitched = false;
-
+  bool _isCreating = false; // for org creation
   OrgAction _lastAction = OrgAction.none;
   MemberFilter _filter = MemberFilter.all;
 
@@ -45,6 +45,7 @@ class OrgProvider extends ChangeNotifier {
   // ============================================================
 
   bool get isLoading => _isLoading;
+  bool get isCreating => _isCreating;
   bool get orgIsLoading => _orgIsLoading;
   bool get isMembersLoading => _isMembersLoading;
   bool get justSwitched => _justSwitched;
@@ -111,7 +112,8 @@ class OrgProvider extends ChangeNotifier {
   /// Create a new organization
   Future<void> createOrganization(String name, String description) async {
     final uid = _auth.currentUser!.uid;
-
+    _isCreating = true;
+    safeChangeNotifier();
     final orgRef = await _db.collection('organizations').add({
       'name': name,
       'description': description,
@@ -147,6 +149,10 @@ class OrgProvider extends ChangeNotifier {
       'email': _auth.currentUser!.email,
       'joinedAt': FieldValue.serverTimestamp(),
     });
+
+    fetchUserOrgs();
+    _isCreating = false;
+    safeChangeNotifier();
   }
 
   /// Fetch all organizations user belongs to
@@ -276,7 +282,7 @@ class OrgProvider extends ChangeNotifier {
   /// Create a program
   Future<void> createProgram(String name, String description) async {
     _requireActivePlan();
-
+    safeChangeNotifier();
     await _db
         .collection('organizations')
         .doc(_currentOrgId)
@@ -289,6 +295,7 @@ class OrgProvider extends ChangeNotifier {
           'createdBy': _currentUserId,
           'isArchived': false,
         });
+    safeChangeNotifier();
   }
 
   /// Create a course
@@ -305,6 +312,7 @@ class OrgProvider extends ChangeNotifier {
   }) async {
     _requireActivePlan();
 
+    safeChangeNotifier();
     await _db
         .collection('organizations')
         .doc(_currentOrgId)
@@ -325,6 +333,7 @@ class OrgProvider extends ChangeNotifier {
           'createdAt': FieldValue.serverTimestamp(),
           'createdBy': _currentUserId,
         });
+    safeChangeNotifier();
   }
 
   /// Create a class
@@ -450,8 +459,8 @@ class OrgProvider extends ChangeNotifier {
 
     try {
       _isLoading = true;
-      notifyListeners();
 
+      safeChangeNotifier();
       // 1. Check if user exists
       final userQuery = await _db
           .collection('users')
@@ -514,7 +523,7 @@ class OrgProvider extends ChangeNotifier {
 
     try {
       _isLoading = true;
-      notifyListeners();
+      safeChangeNotifier();
 
       // 1. Check if user exists
       final userQuery = await _db
@@ -731,10 +740,11 @@ class OrgProvider extends ChangeNotifier {
   /// Set member filter
   void setFilter(MemberFilter filter) {
     _filter = filter;
+    print("filter$filter");
     fetchMembers();
   }
 
-  /// Fetch members with filter
+  /// Fetch Members with filter
   Future<void> fetchMembers() async {
     if (_currentOrgId == null) return;
 
@@ -745,21 +755,19 @@ class OrgProvider extends ChangeNotifier {
       Query query = _db
           .collection('organizations')
           .doc(_currentOrgId)
-          .collection('members');
+          .collection('members')
+          .orderBy('joinedAt', descending: true);
 
-      if (_filter != MemberFilter.all) {
-        query = query.where('role', isEqualTo: _filter.name);
+      final role = _filter == MemberFilter.all ? null : _filter.name;
+
+      if (role != null) {
+        query = query.where('role', isEqualTo: role);
       }
 
       final snapshot = await query.get();
 
       _members = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>?;
-        if (data != null) {
-          return {'id': doc.id, ...data};
-        } else {
-          return {'id': doc.id};
-        }
+        return {'id': doc.id, ...(doc.data() as Map<String, dynamic>)};
       }).toList();
     } catch (e) {
       debugPrint('Fetch members error: $e');

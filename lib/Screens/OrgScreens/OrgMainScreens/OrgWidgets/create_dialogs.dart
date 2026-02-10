@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:provider/provider.dart';
 
-void showCreateOrgDialog(BuildContext context) {
+void showCreateOrgDialog(BuildContext context, OrgProvider orgProvider) {
   final nameController = TextEditingController();
   final descController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -13,8 +13,6 @@ void showCreateOrgDialog(BuildContext context) {
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          bool isCreating = false;
-
           return AlertDialog(
             title: const Text("New Organization"),
             shape: RoundedRectangleBorder(
@@ -61,7 +59,9 @@ void showCreateOrgDialog(BuildContext context) {
             ),
             actions: [
               TextButton(
-                onPressed: isCreating ? null : () => Navigator.pop(context),
+                onPressed: orgProvider.isCreating
+                    ? null
+                    : () => Navigator.pop(context),
                 child: const Text("Cancel"),
               ),
               ElevatedButton(
@@ -72,42 +72,38 @@ void showCreateOrgDialog(BuildContext context) {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: isCreating
+                onPressed: orgProvider.isCreating
                     ? null
                     : () async {
-                        if (formKey.currentState!.validate()) {
-                          setState(() => isCreating = true);
-                          try {
-                            await Provider.of<OrgProvider>(
-                              context,
-                              listen: false,
-                            ).createOrganization(
-                              nameController.text.trim(),
-                              descController.text.trim(),
-                            );
+                        try {
+                          await Provider.of<OrgProvider>(
+                            context,
+                            listen: false,
+                          ).createOrganization(
+                            nameController.text.trim(),
+                            descController.text.trim(),
+                          );
 
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Organization Created!"),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              setState(() => isCreating = false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Error: $e"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Organization Created!"),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           }
                         }
                       },
-                child: isCreating
+                child: orgProvider.isCreating
                     ? const SizedBox(
                         width: 20,
                         height: 20,
