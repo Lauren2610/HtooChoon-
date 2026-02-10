@@ -740,7 +740,7 @@ class OrgProvider extends ChangeNotifier {
   /// Set member filter
   void setFilter(MemberFilter filter) {
     _filter = filter;
-    print("filter$filter");
+    print("filter${filter.name}");
     fetchMembers();
   }
 
