@@ -202,7 +202,24 @@ class SocialButton extends StatelessWidget {
 class PremiumLoginScreen extends StatelessWidget {
   const PremiumLoginScreen({super.key});
 
-  @overrideild: _AuthFormSection());
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LoginProvider>(
+      builder: (context, loginProvider, child) => Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              // Desktop/Web: Split screen layout
+              return Row(
+                children: [
+                  const Expanded(flex: 5, child: _AuthFormSection()),
+                  Expanded(flex: 5, child: _RightSideVisual()),
+                ],
+              );
+            } else {
+              // Mobile: Single column
+              return const Center(child: _AuthFormSection());
             }
           },
         ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Providers/assignment_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -58,34 +60,48 @@ class _AssignmentCard extends StatelessWidget {
         ? DateFormat('MMM d, h:mm a').format(dueDate)
         : 'No due date';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.assignment, color: Theme.of(context).primaryColor),
-        ),
-        title: Text(
-          assignment['title'] ?? 'Untitled',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Due: $formattedDate'),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AssignmentDetailScreen(
-                assignmentId: assignment['id'],
-                title: assignment['title'] ?? 'Assignment',
-              ),
+    return Consumer<LoginProvider>(
+      builder: (_, loginprovider, __) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-          );
-        },
+            child: Icon(
+              Icons.assignment,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+          title: Text(
+            assignment['title'] ?? 'Untitled',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text('Due: $formattedDate'),
+          trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LmsHomeScreen(
+                  userId: loginprovider.uid.toString(),
+                  userRole: "teacher",
+                ),
+              ),
+            );
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (_) => AssignmentDetailScreen(.
+            //       assignmentId: assignment['id'],
+            //       title: assignment['title'] ?? 'Assignment',
+            //     ),
+            //   ),
+            // );
+          },
+        ),
       ),
     );
   }

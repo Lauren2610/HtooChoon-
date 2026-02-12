@@ -61,10 +61,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Placeholder Icon instead of Image for now
-                        Icon(
-                          Icons.school_rounded,
-                          size: 100,
+                        Image.asset(
+                          'assets/images/logos/main_logo.jpeg',
+                          // size: 100,
                           color: Theme.of(context).primaryColor,
                         ),
                         const SizedBox(height: 48),

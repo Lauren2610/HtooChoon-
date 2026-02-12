@@ -12,11 +12,39 @@ class LoginProvider extends ChangeNotifier {
   bool isDisposed = false;
   bool isLoading = false;
   String? errormessage;
+  User? _firebaseUser;
+  String? _uid;
+  String? _role;
 
+  User? get firebaseUser => _firebaseUser;
+  String? get uid => _uid;
+  String? get role => _role;
   void safeChangeNotifier() {
     if (!isDisposed) {
       notifyListeners();
     }
+  }
+
+  LoginProvider() {
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) {
+        _firebaseUser = user;
+        _uid = user.uid;
+
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        _role = userDoc.data()?['role'];
+      } else {
+        _firebaseUser = null;
+        _uid = null;
+        _role = null;
+      }
+
+      safeChangeNotifier();
+    });
   }
 
   @override
@@ -304,7 +332,7 @@ class LoginProvider extends ChangeNotifier {
 
     await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
       'email': user.email,
-      'role': 'user', // Default is just user
+      'role': 'user',
       'userType': 'none',
       'plan': defaultPlan,
       'username': username,
@@ -322,12 +350,14 @@ class LoginProvider extends ChangeNotifier {
     if (!userDoc.exists) {
       throw Exception("User document not found");
     }
-
-    final role = userDoc['role'] ?? 'user';
+    final roleFromDb = userDoc['role'] ?? 'user';
     final plan = userDoc['plan'] ?? 'free';
+    _firebaseUser = user;
+    _uid = user.uid;
+    _role = roleFromDb;
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('role', role);
+    await prefs.setString('role', roleFromDb);
     await prefs.setString('plan', plan);
     await prefs.setString('userId', user.uid);
     await prefs.setString('email', user.email ?? '');
