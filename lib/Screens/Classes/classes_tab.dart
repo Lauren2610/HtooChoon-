@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
 
 class ClassesTab extends StatelessWidget {
   ClassesTab({super.key});
@@ -120,7 +121,10 @@ class _ClassListItem extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            //   Navigator.push(context, MaterialPageRoute(builder: (context)=> LmsHomeScreen(userId: userId, userRole: userRole, classId: )));
+            // },
+          },
           borderRadius: AppTheme.borderRadiusLg,
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.spaceMd),
