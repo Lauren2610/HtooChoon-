@@ -14,8 +14,12 @@ import 'package:provider/provider.dart';
 
 class PremiumDashboardWrapper extends StatefulWidget {
   final String? currentOrgID;
-
-  const PremiumDashboardWrapper({super.key, required this.currentOrgID});
+  final String? currentOrgName;
+  const PremiumDashboardWrapper({
+    super.key,
+    required this.currentOrgID,
+    required this.currentOrgName,
+  });
 
   @override
   State<PremiumDashboardWrapper> createState() =>
@@ -57,6 +61,7 @@ class _PremiumDashboardWrapperState extends State<PremiumDashboardWrapper> {
             children: [
               // Sidebar Navigation
               PremiumSidebar(
+                orgName: orgProvider.currentOrgName.toString(),
                 selectedIndex: _selectedIndex,
                 onDestinationSelected: (index) {
                   setState(() => _selectedIndex = index);

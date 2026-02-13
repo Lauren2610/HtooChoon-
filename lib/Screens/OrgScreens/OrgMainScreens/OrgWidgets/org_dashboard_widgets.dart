@@ -182,19 +182,21 @@ void showCreateProgramDialog(BuildContext context, OrgProvider provider) {
 /// Students need to be assigned to specific courses/classes
 void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
   final emailController = TextEditingController();
-  List<Map<String, dynamic>> suggestions = [];
   Map<String, dynamic>? selectedUser;
-  bool isSearching = false;
-
-  // Student-specific fields
-  String? selectedCourseId;
   String? selectedClassId;
-  List<String> selectedCourseIds = []; // For bulk course assignment
+  List<String> selectedCourseIds = [];
+  bool isSearching = false;
+  List<Map<String, dynamic>> suggestions = [];
 
   showDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) {
+        final bool isFormValid =
+            selectedUser != null &&
+            selectedCourseIds.isNotEmpty &&
+            (selectedCourseIds.length > 1 ||
+                (selectedCourseIds.length == 1 && selectedClassId != null));
         Future<void> onSearch(String value) async {
           setState(() {
             isSearching = true;
@@ -403,6 +405,15 @@ void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
 
                                   return CheckboxListTile(
                                     value: isSelected,
+                                    // onChanged: (checked) {
+                                    //   setState(() {
+                                    //     if (checked == true) {
+                                    //       selectedCourseIds.add(courseId);
+                                    //     } else {
+                                    //       selectedCourseIds.remove(courseId);
+                                    //     }
+                                    //   });
+                                    // },
                                     onChanged: (checked) {
                                       setState(() {
                                         if (checked == true) {
@@ -410,8 +421,11 @@ void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
                                         } else {
                                           selectedCourseIds.remove(courseId);
                                         }
+
+                                        selectedClassId = null;
                                       });
                                     },
+
                                     title: Text(
                                       course['title'] ?? 'Untitled Course',
                                       style: Theme.of(
@@ -498,6 +512,10 @@ void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
                                 }).toList(),
                                 onChanged: (value) {
                                   setState(() => selectedClassId = value);
+                                  // print('User: $selectedUser');
+                                  // print('Courses: $selectedCourseIds');
+                                  // print('Class: $selectedClassId');
+                                  // print("isformvalid ${isFormValid}");
                                 },
                               ),
                               const SizedBox(height: AppTheme.spaceMd),
@@ -518,15 +536,12 @@ void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
             ),
             const SizedBox(width: AppTheme.spaceXs),
             ElevatedButton(
-              onPressed: selectedUser == null || provider.isLoading
-                  ? () {
-                      CircularProgressIndicator();
-                    }
+              onPressed: (isFormValid == false || provider.isLoading)
+                  ? null
                   : () async {
                       try {
                         await provider.inviteStudent(
                           selectedUser!['email'],
-                          // selectedCourseIds,
                           classId: selectedClassId.toString(),
                           title: 'Invitation to join our Learning Platform',
                           body:
@@ -539,9 +554,9 @@ void showInviteStudentDialog(BuildContext context, OrgProvider provider) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              selectedCourseIds.isEmpty
-                                  ? 'Student invited successfully!'
-                                  : 'Student invited with ${selectedCourseIds.length} course(s)!',
+                              selectedCourseIds.length > 1
+                                  ? 'Student invited with ${selectedCourseIds.length} courses!'
+                                  : 'Student invited successfully!',
                             ),
                           ),
                         );

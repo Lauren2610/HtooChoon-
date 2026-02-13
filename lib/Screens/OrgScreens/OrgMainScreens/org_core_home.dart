@@ -1401,8 +1401,7 @@ class TeachersListScreen extends StatelessWidget {
         actions: [
           TextButton.icon(
             onPressed: () {
-              //TODO
-              // _showInviteDialog(context, orgProvider, "teacher"),
+              showInviteDialog(context, orgProvider);
             },
 
             icon: const Icon(Icons.person_add),
@@ -1479,9 +1478,7 @@ class StudentsListScreen extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            //TODO
-
-            // _showInviteDialog(context, orgProvider, "student"),
+            showInviteStudentDialog(context, orgProvider);
           },
 
           label: const Text("Invite Student"),

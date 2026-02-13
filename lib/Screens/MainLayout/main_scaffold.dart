@@ -47,8 +47,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) =>
-                PremiumDashboardWrapper(currentOrgID: orgProvider.currentOrgId),
+            builder: (_) => PremiumDashboardWrapper(
+              currentOrgID: orgProvider.currentOrgId,
+              currentOrgName: orgProvider.currentOrgName ?? "Htoo Choon",
+            ),
           ),
           (route) => false,
         );
@@ -321,7 +323,7 @@ class _FooterButtonState extends State<_FooterButton> {
   }
 }
 
-/// Global loading overlay for organization operations
+/// HERE!!! Global loading overlay for organization operations
 class GlobalOrgSwitchOverlay extends StatelessWidget {
   final String loadingText;
 

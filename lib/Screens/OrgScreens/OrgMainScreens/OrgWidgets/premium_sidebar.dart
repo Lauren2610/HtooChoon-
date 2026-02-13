@@ -16,11 +16,14 @@ class PremiumSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final bool isExtended;
-
+  final String? orgImageUrl;
+  final String orgName;
   const PremiumSidebar({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
+    this.orgImageUrl,
+    required this.orgName,
     required this.isExtended,
   });
 
@@ -164,7 +167,9 @@ class PremiumSidebar extends StatelessWidget {
               ),
               borderRadius: AppTheme.borderRadiusMd,
             ),
-            child: const Icon(Icons.school, color: Colors.white, size: 24),
+            child: (orgImageUrl == null)
+                ? const Icon(Icons.school, color: Colors.white, size: 24)
+                : Image.asset(orgImageUrl.toString(), height: 70),
           ),
           if (isExtended) ...[
             const SizedBox(width: AppTheme.spaceSm),
@@ -173,7 +178,7 @@ class PremiumSidebar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Htoo Choon',
+                    orgName,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
