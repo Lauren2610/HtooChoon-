@@ -15,7 +15,11 @@ class StructureProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get classes => _classes;
 
   /// Create a new Program within an organization
-  Future<void> createProgram(String orgId, String name, String description) async {
+  Future<void> createProgram(
+    String orgId,
+    String name,
+    String description,
+  ) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -25,11 +29,11 @@ class StructureProvider extends ChangeNotifier {
           .doc(orgId)
           .collection('programs')
           .add({
-        'name': name,
-        'description': description,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isActive': true,
-      });
+            'name': name,
+            'description': description,
+            'createdAt': FieldValue.serverTimestamp(),
+            'isActive': true,
+          });
 
       await fetchPrograms(orgId);
       _isLoading = false;
@@ -64,7 +68,12 @@ class StructureProvider extends ChangeNotifier {
   }
 
   /// Create a new Course within a Program
-  Future<void> createCourse(String orgId, String programId, String name, String description) async {
+  Future<void> createCourse(
+    String orgId,
+    String programId,
+    String name,
+    String description,
+  ) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -76,11 +85,11 @@ class StructureProvider extends ChangeNotifier {
           .doc(programId)
           .collection('courses')
           .add({
-        'name': name,
-        'description': description,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isActive': true,
-      });
+            'name': name,
+            'description': description,
+            'createdAt': FieldValue.serverTimestamp(),
+            'isActive': true,
+          });
 
       await fetchCourses(orgId, programId);
       _isLoading = false;
@@ -138,12 +147,12 @@ class StructureProvider extends ChangeNotifier {
           .doc(courseId)
           .collection('classes')
           .add({
-        'name': name,
-        'teacherId': teacherId,
-        'schedule': schedule,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isActive': true,
-      });
+            'name': name,
+            'teacherId': teacherId,
+            'schedule': schedule,
+            'createdAt': FieldValue.serverTimestamp(),
+            'isActive': true,
+          });
 
       await fetchClasses(orgId, programId, courseId);
       _isLoading = false;
@@ -157,7 +166,11 @@ class StructureProvider extends ChangeNotifier {
   }
 
   /// Fetch all classes for a course
-  Future<void> fetchClasses(String orgId, String programId, String courseId) async {
+  Future<void> fetchClasses(
+    String orgId,
+    String programId,
+    String courseId,
+  ) async {
     try {
       final snapshot = await _db
           .collection('organizations')

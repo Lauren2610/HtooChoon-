@@ -14,7 +14,6 @@ import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
 import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart'; // New
-import 'package:htoochoon_flutter/Screens/Teacher/Home/teacher_dashboard_screen.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:htoochoon_flutter/firebase_options.dart';
 import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
@@ -144,7 +143,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        return const TeacherDashboardScreen();
+        return const PremiumLoginScreen();
       },
     );
   }
