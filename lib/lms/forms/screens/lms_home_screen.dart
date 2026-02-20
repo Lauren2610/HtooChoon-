@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'form_builder_screen.dart';
@@ -33,12 +35,12 @@ class _LmsHomeScreenState extends State<LmsHomeScreen> {
               child: IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FormBuilderScreen(userId: widget.userId),
-                    ),
-                  );
+                  setState(() {
+                    createTestOptionDialog(
+                      context: context,
+                      userId: widget.userId,
+                    );
+                  });
                 },
               ),
             ),
@@ -136,4 +138,103 @@ class _LmsHomeScreenState extends State<LmsHomeScreen> {
       ],
     );
   }
+}
+
+void createTestOptionDialog({
+  required BuildContext context,
+  required String userId,
+}) {
+  showDialog(
+    context: context,
+    builder: (context) => SimpleDialog(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              glassButton(
+                context: context,
+                title: "Create Form",
+                subtitle: "Create forms for tests and assignments",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FormBuilderScreen(userId: userId),
+                    ),
+                  );
+                },
+              ),
+              glassButton(
+                context: context,
+                title: "Create Game",
+                subtitle:
+                    "Create fun quiz games for enhance memorization and practice",
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget glassButton({
+  required BuildContext context,
+  required String title,
+  required String subtitle,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: 160,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.white.withOpacity(0.1), // glass tint
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

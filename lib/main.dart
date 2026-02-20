@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Api/api_service/api_service.dart';
 import 'package:htoochoon_flutter/Providers/assignment_provider.dart';
 import 'package:htoochoon_flutter/Providers/class_provider.dart';
 import 'package:htoochoon_flutter/Providers/invitation_provider.dart';
@@ -29,7 +31,8 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-
+  Dio dio = Dio();
+  ApiService apiService = ApiService(dio);
   runApp(
     MultiProvider(
       providers: [

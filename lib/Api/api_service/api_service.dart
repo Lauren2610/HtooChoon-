@@ -1,0 +1,27 @@
+import 'package:dio/dio.dart';
+
+import 'package:retrofit/error_logger.dart';
+import 'package:retrofit/http.dart';
+
+import 'package:retrofit/retrofit.dart';
+
+part 'api_service.g.dart';
+
+@RestApi(baseUrl: "https://htoochoon.kargate.site/")
+abstract class ApiService {
+  factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
+  //
+  // @POST("auth/register")
+  // Future<RegisterAccountRequest> register(
+  //   @Body() RegisterAccountRequest request,
+  // );
+  //
+  // @POST("auth/send-otp")
+  // Future<SendOtpResponse> sendOtp(@Body() SendOtpRequest request);
+  //
+  // @POST("auth/verify-otp")
+  // Future<VerifyOtpResponse> verifyOtp(@Body() VerifyOtpRequest request);
+  //
+  // @POST("auth/login")
+  // Future<LoginResponse> login(@Body() LoginRequest request);
+}
