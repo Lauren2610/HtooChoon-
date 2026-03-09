@@ -29,4 +29,8 @@ abstract class ApiService {
   Future<ResetPasswordResponse> resetPassword(
     @Body() ResetPasswordRequest request,
   );
+
+  /// FETCH USer
+  @POST("/auth/me")
+  Future<UserResponse> fetchMe();
 }

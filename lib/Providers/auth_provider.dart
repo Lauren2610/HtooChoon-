@@ -1,19 +1,44 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
 import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import '../api/api_service.dart';
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService apiService;
 
-  AuthProvider(this.apiService);
+  AuthProvider(this.apiService) {
+    loadUserFromPrefs();
+  }
 
   bool _isLoading = false;
   String? _accessToken;
+  UserResponse? _user;
   String? _userId;
-
   bool get isLoading => _isLoading;
   String? get accessToken => _accessToken;
+  UserResponse? get user => _user;
   String? get userId => _userId;
+
+  /// =========================
+  /// LOAD USER FROM STORAGE
+  /// =========================
+  Future<void> loadUserFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    _accessToken = prefs.getString("access_token");
+    final userJson = prefs.getString("user");
+
+    if (userJson != null) {
+      _user = UserResponse.fromJson(jsonDecode(userJson));
+    }
+
+    notifyListeners();
+  }
 
   /// =========================
   /// REGISTER
@@ -78,19 +103,34 @@ class AuthProvider extends ChangeNotifier {
   /// =========================
   /// LOGIN
   /// =========================
-  Future<LoginResponse?> login(LoginRequest request) async {
+  Future<void> login(LoginRequest request, BuildContext context) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      final response = await apiService.login(request);
+      final loginResponse = await apiService.login(request);
 
-      _accessToken = response.access_token;
-      _userId = response.userId;
+      _accessToken = loginResponse.access_token;
+      _userId = loginResponse.userId;
 
-      return response;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("access_token", _accessToken!);
+      await prefs.setString("userId", _userId!);
+
+      /// fetch user profile
+      final user = await apiService.fetchMe();
+
+      _user = user;
+
+      await prefs.setString("user", jsonEncode(user.toJson()));
     } catch (e) {
       debugPrint("Login Error: $e");
+      if (e.toString().contains("Email Not verified")) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
+        );
+      }
       rethrow;
     } finally {
       _isLoading = false;
@@ -123,10 +163,19 @@ class AuthProvider extends ChangeNotifier {
   /// =========================
   /// LOGOUT
   /// =========================
-  void logout() {
-    _accessToken = null;
-    _userId = null;
+  Future<void> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    notifyListeners();
+      await prefs.remove("access_token");
+      await prefs.remove("user");
+
+      _accessToken = null;
+      _userId = null;
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Logout Error: $e");
+    }
   }
 }

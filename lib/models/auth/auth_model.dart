@@ -170,3 +170,29 @@ class ResetPasswordResponse {
 
   Map<String, dynamic> toJson() => _$ResetPasswordResponseToJson(this);
 }
+
+/// ============================
+/// USER RESPONSE
+/// ============================
+
+@JsonSerializable()
+class UserResponse {
+  final String id;
+  final String email;
+  final String name;
+  final String role;
+  final bool isActive;
+
+  UserResponse({
+    required this.id,
+    required this.email,
+    required this.name,
+    required this.role,
+    required this.isActive,
+  });
+
+  factory UserResponse.fromJson(Map<String, dynamic> json) =>
+      _$UserResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserResponseToJson(this);
+}

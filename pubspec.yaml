@@ -50,6 +50,8 @@ dependencies:
   foundation: ^0.0.5
   uuid: ^4.5.2
   json_annotation: ^4.11.0
+  pin_code_fields: ^9.1.0
+  otp_pin_field: ^1.4.1
 
 dev_dependencies:
   flutter_test:

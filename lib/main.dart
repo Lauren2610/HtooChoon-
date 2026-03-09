@@ -1,5 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/assignment_provider.dart';
 import 'package:htoochoon_flutter/Providers/class_provider.dart';
@@ -12,9 +13,12 @@ import 'package:htoochoon_flutter/Providers/structure_provider.dart';
 import 'package:htoochoon_flutter/Providers/subscription_provider.dart';
 import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
-import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart'; // New
+import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:htoochoon_flutter/api/api_service.dart';
 import 'package:htoochoon_flutter/firebase_options.dart';
 import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
 
@@ -28,6 +32,28 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: "https://htoochoon.kargate.site/",
+      headers: {"Content-Type": "application/json"},
+    ),
+  );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString("access_token");
+
+        if (token != null) {
+          options.headers["Authorization"] = "Bearer $token";
+        }
+
+        handler.next(options);
+      },
+    ),
+  );
+  final apiService = ApiService(dio);
 
   runApp(
     MultiProvider(
@@ -35,6 +61,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => LoginProvider()),
         ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (context) => AuthProvider(apiService)),
         ChangeNotifierProvider(create: (context) => OrgProvider()),
         ChangeNotifierProvider(create: (context) => AssignmentProvider()),
         ChangeNotifierProvider(create: (context) => StructureProvider()),
@@ -72,79 +99,21 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatefulWidget {
+class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends State<AuthWrapper> {
-  bool _isInit = false;
-  Future<bool>? _onboardingCheck;
-
-  @override
-  void initState() {
-    super.initState();
-    _onboardingCheck = _checkOnboarding();
-  }
-
-  Future<bool> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('hasSeenOnboarding') ?? false;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    final authProvider = context.watch<AuthProvider>();
 
-        if (snapshot.hasData && snapshot.data != null) {
-          if (!_isInit) {
-            _isInit = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Provider.of<UserProvider>(context, listen: false).fetchUser();
-            });
-          }
+    if (authProvider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-          return FutureBuilder<bool>(
-            future: _onboardingCheck,
-            builder: (context, onboardingSnapshot) {
-              if (onboardingSnapshot.connectionState ==
-                  ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
+    if (authProvider.accessToken != null) {
+      return MainScaffold();
+    }
 
-              final hasSeenOnboarding = onboardingSnapshot.data ?? false;
-
-              if (!hasSeenOnboarding) {
-                return const OnboardingScreen();
-              }
-
-              return Consumer<UserProvider>(
-                builder: (context, userProvider, child) {
-                  if (userProvider.isLoading) {
-                    return const Scaffold(
-                      body: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  return MainScaffold();
-                },
-              );
-            },
-          );
-        }
-
-        return const PremiumLoginScreen();
-      },
-    );
+    return const OtpScreen(email: "ksjdkjskdjk@gmail");
   }
 }
