@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 
@@ -251,29 +253,29 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
     });
   }
 
-  void _handleSubmit(LoginProvider provider) {
+  void _handleSubmit(AuthProvider provider) {
     if (_formKey.currentState!.validate()) {
       if (_isSignUp) {
-        provider.registerUser(
-          context,
-          _emailController.text.trim(),
-          _passwordController.text,
-          _usernameController.text.trim(),
+        RegisterRequest registerRequest = RegisterRequest(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          name: _usernameController.text.trim(),
         );
+        provider.register(registerRequest, context);
       } else {
-        provider.loginWithEmail(
-          context,
-          _emailController.text.trim(),
-          _passwordController.text,
+        LoginRequest loginRequest = LoginRequest(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
+        provider.login(loginRequest, context);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LoginProvider>(
-      builder: (context, loginProvider, child) => SingleChildScrollView(
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) => SingleChildScrollView(
         padding: EdgeInsets.symmetric(
           horizontal: MediaQuery.of(context).size.width > 600
               ? AppTheme.space4xl
@@ -411,11 +413,13 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
                   textColorGoogle: Theme.of(context).colorScheme.secondary,
                   textColor: Theme.of(context).colorScheme.inversePrimary,
                   isSignUp: _isSignUp,
-                  isLoading: loginProvider.isLoading,
-                  onPressed: () => _handleSubmit(loginProvider),
-                  onPressedGoogle: loginProvider.isLoading
+                  isLoading: authProvider.isLoading,
+                  onPressed: () => _handleSubmit(authProvider),
+                  onPressedGoogle: authProvider.isLoading
                       ? () {}
-                      : () => loginProvider.signInWithGoogle(context),
+                      : () {
+                          // authProvider.signInWithGoogle(context),
+                        },
                 ),
 
                 const SizedBox(height: AppTheme.spaceLg),

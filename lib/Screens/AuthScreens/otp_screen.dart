@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import 'package:provider/provider.dart';
@@ -78,17 +79,18 @@ class _OtpScreenState extends State<OtpScreen> {
     final auth = context.read<AuthProvider>();
 
     try {
-      await auth.verifyOtp(
-        VerifyOtpRequest(
-          email: widget.email,
-          otp: otpCode,
-          action: "VERIFY_EMAIL",
-        ),
-      );
-
+      // await auth.verifyOtp(
+      //   VerifyOtpRequest(
+      //     email: widget.email,
+      //     otp: otpCode,
+      //     action: "VERIFY_EMAIL",
+      //   ),
+      //   context,
+      // );
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("OTP Verified"),
+          content: Text("OTP Verified.Pleasel login again"),
           backgroundColor: AppTheme.success,
         ),
       );

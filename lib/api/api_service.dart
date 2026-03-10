@@ -32,5 +32,5 @@ abstract class ApiService {
 
   /// FETCH USer
   @POST("/auth/me")
-  Future<UserResponse> fetchMe();
+  Future<User> fetchMe();
 }

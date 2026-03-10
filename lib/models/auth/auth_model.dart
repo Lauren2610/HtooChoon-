@@ -9,8 +9,13 @@ part 'auth_model.g.dart';
 class RegisterRequest {
   final String email;
   final String password;
+  final String name;
 
-  RegisterRequest({required this.email, required this.password});
+  RegisterRequest({
+    required this.email,
+    required this.password,
+    required this.name,
+  });
 
   factory RegisterRequest.fromJson(Map<String, dynamic> json) =>
       _$RegisterRequestFromJson(json);
@@ -101,9 +106,7 @@ class VerifyOtpResponse {
   Map<String, dynamic> toJson() => _$VerifyOtpResponseToJson(this);
 }
 
-/// ============================
-/// LOGIN REQUEST
-/// ============================
+/// ================= LOGIN REQUEST =================
 @JsonSerializable()
 class LoginRequest {
   final String email;
@@ -117,15 +120,58 @@ class LoginRequest {
   Map<String, dynamic> toJson() => _$LoginRequestToJson(this);
 }
 
-/// ============================
-/// LOGIN RESPONSE
-/// ============================
+/// ================= ACCESS TOKEN WRAPPER =================
+@JsonSerializable()
+class AccessTokenWrapper {
+  final String access_token;
+
+  AccessTokenWrapper({required this.access_token});
+
+  factory AccessTokenWrapper.fromJson(Map<String, dynamic> json) =>
+      _$AccessTokenWrapperFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AccessTokenWrapperToJson(this);
+}
+
+/// ================= USER MODEL =================
+@JsonSerializable()
+class User {
+  final String id;
+  final String email;
+  final String? googleId;
+  final String name;
+  final String role;
+  final bool isActive;
+  final bool isTwoFactorEnabled;
+  final String? twoFactorSecret;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  User({
+    required this.id,
+    required this.email,
+    this.googleId,
+    required this.name,
+    required this.role,
+    required this.isActive,
+    required this.isTwoFactorEnabled,
+    this.twoFactorSecret,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserToJson(this);
+}
+
+/// ================= LOGIN RESPONSE =================
 @JsonSerializable()
 class LoginResponse {
-  final String access_token;
-  final String userId;
+  final AccessTokenWrapper access_token;
+  final User data;
 
-  LoginResponse({required this.access_token, required this.userId});
+  LoginResponse({required this.access_token, required this.data});
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) =>
       _$LoginResponseFromJson(json);
@@ -172,18 +218,18 @@ class ResetPasswordResponse {
 }
 
 /// ============================
-/// USER RESPONSE
+/// AUTHME RESPONSE
 /// ============================
 
 @JsonSerializable()
-class UserResponse {
+class AuthMeResponse {
   final String id;
   final String email;
   final String name;
   final String role;
   final bool isActive;
 
-  UserResponse({
+  AuthMeResponse({
     required this.id,
     required this.email,
     required this.name,
@@ -191,8 +237,8 @@ class UserResponse {
     required this.isActive,
   });
 
-  factory UserResponse.fromJson(Map<String, dynamic> json) =>
-      _$UserResponseFromJson(json);
+  factory AuthMeResponse.fromJson(Map<String, dynamic> json) =>
+      _$AuthMeResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => _$UserResponseToJson(this);
+  Map<String, dynamic> toJson() => _$AuthMeResponseToJson(this);
 }

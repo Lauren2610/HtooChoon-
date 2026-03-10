@@ -114,6 +114,6 @@ class AuthWrapper extends StatelessWidget {
       return MainScaffold();
     }
 
-    return const OtpScreen(email: "ksjdkjskdjk@gmail");
+    return const PremiumLoginScreen();
   }
 }
