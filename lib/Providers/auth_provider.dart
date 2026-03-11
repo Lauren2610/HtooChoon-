@@ -91,6 +91,17 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Request OTP without changing loading state (for internal use)
+  Future<RequestOtpResponse?> requestOtpSilent(RequestOtpRequest request) async {
+    try {
+      final response = await apiService.requestOtp(request);
+      return response;
+    } catch (e) {
+      debugPrint("Request OTP Silent Error: $e");
+      rethrow;
+    }
+  }
+
   /// =========================
   /// VERIFY OTP
   /// =========================
@@ -157,6 +168,9 @@ class AuthProvider extends ChangeNotifier {
       );
       // /// fetch user profile
 
+      _isLoading = false;
+      notifyListeners();
+
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => OnboardingScreen()),
@@ -179,22 +193,47 @@ class AuthProvider extends ChangeNotifier {
 
         if (message != null &&
             message.contains("Email Not verified or user is not active")) {
-          print("kjkkjbjkbjk");
+          print("Email not verified - requesting OTP");
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
-          );
+          // Stop loading before navigating
+          _isLoading = false;
+          notifyListeners();
+
+          try {
+            // Request OTP before navigating to OTP screen (silent to avoid loading state changes)
+            await requestOtpSilent(
+              RequestOtpRequest(email: request.email, action: "VERIFY_EMAIL"),
+            );
+            print("OTP requested successfully");
+          } catch (otpError) {
+            print("Failed to request OTP: $otpError");
+            // Continue to OTP screen even if request fails (OTP might already be sent)
+          }
+
+          if (context.mounted) {
+            // Use pushReplacement to prevent going back to login
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OtpScreen(email: request.email),
+              ),
+            );
+          }
           return;
         }
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message ?? "Login failed")));
+        _isLoading = false;
+        notifyListeners();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message ?? "Login failed")));
+        }
+      } else {
+        _isLoading = false;
+        notifyListeners();
       }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 

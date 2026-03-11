@@ -312,7 +312,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
             const SizedBox(height: AppTheme.spaceMd),
 
-            // Account Settings Section (optional enhancement)
+            // Account Settings Section
             Container(
               padding: const EdgeInsets.all(AppTheme.spaceMd),
               decoration: BoxDecoration(
@@ -356,8 +356,85 @@ class _ProfileTabState extends State<ProfileTab> {
                 ],
               ),
             ),
+
+            const SizedBox(height: AppTheme.space2xl),
+
+            // Logout Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text('Log Out'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.error,
+                  side: const BorderSide(color: AppTheme.error, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppTheme.borderRadiusMd,
+                  ),
+                ),
+                onPressed: () => _showLogoutDialog(context, authProvider),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppTheme.borderRadiusMd),
+        icon: Icon(Icons.logout_rounded, size: 48, color: AppTheme.error),
+        title: const Text('Log Out', textAlign: TextAlign.center),
+        content: const Text(
+          'Are you sure you want to log out?',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await authProvider.logout();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Logged out successfully'),
+                          backgroundColor: AppTheme.success,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.error,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                  ),
+                  child: const Text('Log Out'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

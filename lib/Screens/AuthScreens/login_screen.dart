@@ -253,7 +253,7 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
     });
   }
 
-  void _handleSubmit(AuthProvider provider) {
+  void _handleSubmit(AuthProvider provider, BuildContext context) {
     if (_formKey.currentState!.validate()) {
       if (_isSignUp) {
         RegisterRequest registerRequest = RegisterRequest(
@@ -414,7 +414,7 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
                   textColor: Theme.of(context).colorScheme.inversePrimary,
                   isSignUp: _isSignUp,
                   isLoading: authProvider.isLoading,
-                  onPressed: () => _handleSubmit(authProvider),
+                  onPressed: () => _handleSubmit(authProvider, context),
                   onPressedGoogle: authProvider.isLoading
                       ? () {}
                       : () {
