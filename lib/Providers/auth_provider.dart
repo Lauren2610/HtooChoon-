@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
@@ -162,13 +163,35 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (e) {
       debugPrint("Login Error: $e");
-      if (e.toString().contains("Email Not verified")) {
-        Navigator.push(
+
+      if (e is DioException) {
+        final data = e.response?.data;
+
+        String? message;
+
+        if (data is Map) {
+          message = data["message"];
+        } else if (data is String) {
+          message = data;
+        }
+
+        print("ERROR MESSAGE: $message");
+
+        if (message != null &&
+            message.contains("Email Not verified or user is not active")) {
+          print("kjkkjbjkbjk");
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
+          );
+          return;
+        }
+
+        ScaffoldMessenger.of(
           context,
-          MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
-        );
+        ).showSnackBar(SnackBar(content: Text(message ?? "Login failed")));
       }
-      // don't rethrow, handle gracefully to avoid RenderFlex overflow
     } finally {
       _isLoading = false;
       notifyListeners();

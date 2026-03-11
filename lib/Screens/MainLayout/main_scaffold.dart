@@ -36,7 +36,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final isExtended = MediaQuery.of(context).size.width > 900;
+    final width = MediaQuery.of(context).size.width;
+
+    final isDesktop = width > 900;
+    final isMobile = width < 700;
+
     final themeProvider = Provider.of<ThemeProvider>(context);
     final loginProvider = Provider.of<LoginProvider>(context, listen: false);
     final orgProvider = context.watch<OrgProvider>();
@@ -61,36 +65,104 @@ class _MainScaffoldState extends State<MainScaffold> {
       children: [
         Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
+          // 📱 Mobile Drawer (optional)
+          drawer: isMobile
+              ? Drawer(
+                  child: ListView(
+                    children: [
+                      const DrawerHeader(child: Text("Menu")),
+                      _drawerItem(Icons.home, "Home", 0),
+                      _drawerItem(Icons.class_, "Classes", 1),
+                      _drawerItem(Icons.school, "Courses", 2),
+                      _drawerItem(Icons.business, "Organizations", 3),
+                      _drawerItem(Icons.person, "Profile", 4),
+                      _drawerItem(Icons.notifications, "Notifications", 5),
+                    ],
+                  ),
+                )
+              : null,
+
           body: Row(
             children: [
-              // Sidebar Navigation
-              _PremiumNavigationRail(
-                isExtended: isExtended,
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (index) {
-                  setState(() => _selectedIndex = index);
-                },
-                themeProvider: themeProvider,
-                loginProvider: loginProvider,
-              ),
+              // 🖥 Desktop Sidebar
+              if (!isMobile)
+                _PremiumNavigationRail(
+                  isExtended: isDesktop,
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: (index) {
+                    setState(() => _selectedIndex = index);
+                  },
+                  themeProvider: themeProvider,
+                  loginProvider: loginProvider,
+                ),
 
-              VerticalDivider(
-                width: 1.2,
-                thickness: 1,
-                color: AppTheme.getBorder(context),
-              ),
+              if (!isMobile)
+                VerticalDivider(
+                  width: 1.2,
+                  thickness: 1,
+                  color: AppTheme.getBorder(context),
+                ),
 
-              // Main Content - IndexedStack preserves state
               Expanded(
                 child: IndexedStack(index: _selectedIndex, children: _pages),
               ),
             ],
           ),
+
+          // 📱 Bottom Navigation for Mobile
+          bottomNavigationBar: isMobile
+              ? BottomNavigationBar(
+                  currentIndex: _selectedIndex,
+                  onTap: (index) {
+                    setState(() => _selectedIndex = index);
+                  },
+                  type: BottomNavigationBarType.fixed,
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home),
+                      label: "Home",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.class_),
+                      label: "Classes",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.school),
+                      label: "Courses",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.business),
+                      label: "Orgs",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      label: "Profile",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.notifications),
+                      label: "Alerts",
+                    ),
+                  ],
+                )
+              : null,
         ),
 
         // Loading overlay
         GlobalOrgSwitchOverlay(loadingText: "Switching organization…"),
       ],
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String label, int index) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      selected: _selectedIndex == index,
+      onTap: () {
+        Navigator.pop(context);
+        setState(() => _selectedIndex = index);
+      },
     );
   }
 }
