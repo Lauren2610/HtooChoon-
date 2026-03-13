@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Widgets/profile_menu.dart';
+import 'package:htoochoon_flutter/Widgets/user_appbar.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Providers/user_provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
@@ -8,11 +11,11 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final user = userProvider.userData;
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (userProvider.isLoading && user == null) {
+    if (authProvider.isLoading && user == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -38,72 +41,14 @@ class HomeTab extends StatelessWidget {
       );
     }
 
-    final displayName = user['name'] ?? user['username'] ?? 'Student';
+    final displayName = user.name.toString();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      // refined Appbar
-      appBar: AppBar(
-        scrolledUnderElevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppTheme.space2xs),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.dashboard_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: AppTheme.spaceSm),
-            Text(
-              'Dashboard',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            style: IconButton.styleFrom(
-              backgroundColor: Theme.of(context).cardColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppTheme.getBorder(context)),
-              ),
-            ),
-            icon: Icon(
-              Icons.notifications_outlined,
-              size: 20,
-              color: AppTheme.getTextSecondary(context),
-            ),
-          ),
-          const SizedBox(width: AppTheme.spaceXs),
-          IconButton(
-            onPressed: () {},
-            style: IconButton.styleFrom(
-              backgroundColor: Theme.of(context).cardColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppTheme.getBorder(context)),
-              ),
-            ),
-            icon: Icon(
-              Icons.search,
-              size: 20,
-              color: AppTheme.getTextSecondary(context),
-            ),
-          ),
-          const SizedBox(width: AppTheme.spaceMd),
-        ],
+
+      appBar: UserAppBar(
+        title: "Dashboard",
+        leadIcon: Icons.notifications_outlined,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLg),

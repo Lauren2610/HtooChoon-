@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:htoochoon_flutter/Widgets/user_appbar.dart';
 import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
 
 class ClassesTab extends StatelessWidget {
@@ -12,23 +13,8 @@ class ClassesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text(
-          'My Classes',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.filter_list, size: 22),
-          ),
-          const SizedBox(width: AppTheme.spaceXs),
-        ],
-      ),
+
+      appBar: UserAppBar(title: "My Classes", leadIcon: Icons.class_outlined),
       body: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceLg),
         children: [

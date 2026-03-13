@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Widgets/user_appbar.dart';
 
 class CoursesTab extends StatelessWidget {
   CoursesTab({super.key});
@@ -10,16 +11,8 @@ class CoursesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text(
-          'Browse Courses',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ),
+
+      appBar: UserAppBar(title: "Browse Course", leadIcon: Icons.school),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -19,8 +19,8 @@ class RightSideVisual extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: [
             Color(0xFFF0F4FF), // Very light indigo/blue
-            Color(0xFFD9E4FF),
-            Color(0xFFAEC6FF), // Soft Blue
+            Color(0xFF1c2e4a),
+            Color(0xFF1c2e4a), // Soft Blue
           ],
         ),
       ),
@@ -44,7 +44,7 @@ class RightSideVisual extends StatelessWidget {
                 // Soft shadow for depth
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4D7CFE).withOpacity(0.2),
+                    color: const Color(0xFF1c2e4a).withOpacity(0.2),
                     blurRadius: 60,
                     spreadRadius: 10,
                     offset: const Offset(0, 30),

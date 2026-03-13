@@ -13,6 +13,7 @@ import 'package:htoochoon_flutter/Screens/OrgScreens/org_context_loader.dart';
 import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemented
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -168,6 +169,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 }
 
 /// Premium Navigation Rail with theme integration
+
 class _PremiumNavigationRail extends StatelessWidget {
   final bool isExtended;
   final int selectedIndex;
@@ -185,99 +187,144 @@ class _PremiumNavigationRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: isExtended ? 280 : 72,
-      decoration: BoxDecoration(color: Theme.of(context).cardColor),
-      child: Column(
-        children: [
-          // Logo/Brand
-          _buildHeader(context, isExtended),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-          const SizedBox(height: AppTheme.spaceLg),
-
-          // Navigation Items
-          Expanded(
-            child: NavigationRail(
-              extended: isExtended,
-              minExtendedWidth: 280,
-              backgroundColor: Colors.transparent,
-              selectedIndex: selectedIndex,
-              onDestinationSelected: onDestinationSelected,
-              labelType: isExtended
-                  ? NavigationRailLabelType.none
-                  : NavigationRailLabelType.all,
-              // Destinations are const because they contain only static content
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.class_outlined),
-                  selectedIcon: Icon(Icons.class_),
-                  label: Text('Classes'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.library_books_outlined),
-                  selectedIcon: Icon(Icons.library_books),
-                  label: Text('Courses'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.business_outlined),
-                  selectedIcon: Icon(Icons.business),
-                  label: Text('Org'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: Text('Profile'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.notifications_outlined),
-                  selectedIcon: Icon(Icons.notifications),
-                  label: Text('Notifications'),
-                ),
-              ],
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          width: isExtended ? 240 : 68, // smaller professional width
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.black.withOpacity(0.35)
+                : Theme.of(context).colorScheme.primary,
+            border: Border(
+              right: BorderSide(
+                color: Colors.white.withOpacity(0.08),
+                width: 1,
+              ),
             ),
           ),
+          child: Column(
+            children: [
+              _buildHeader(context, isExtended),
 
-          // Footer Actions
-          Divider(height: 1, color: AppTheme.getBorder(context)),
-          _buildFooter(context, isExtended),
-        ],
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    navigationRailTheme: NavigationRailThemeData(
+                      selectedIconTheme: const IconThemeData(
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      unselectedIconTheme: IconThemeData(
+                        color: Colors.white.withOpacity(0.7),
+                        size: 21,
+                      ),
+                      selectedLabelTextStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelTextStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      indicatorColor: Colors.white.withOpacity(0.12),
+                      useIndicator: true,
+                    ),
+                  ),
+                  child: NavigationRail(
+                    extended: isExtended,
+                    minExtendedWidth: 240,
+                    backgroundColor: Colors.transparent,
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: onDestinationSelected,
+                    labelType: isExtended
+                        ? NavigationRailLabelType.none
+                        : NavigationRailLabelType.all,
+
+                    groupAlignment: -0.9, // tighter top alignment
+
+                    destinations: const [
+                      NavigationRailDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: Text('Home'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.class_outlined),
+                        selectedIcon: Icon(Icons.class_),
+                        label: Text('Classes'),
+                      ),
+
+                      NavigationRailDestination(
+                        icon: Icon(Icons.library_books_outlined),
+                        selectedIcon: Icon(Icons.library_books),
+                        label: Text('Courses'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.business_outlined),
+                        selectedIcon: Icon(Icons.business),
+                        label: Text('Org'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.person_outline),
+                        selectedIcon: Icon(Icons.person),
+                        label: Text('Profile'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.notifications_outlined),
+                        selectedIcon: Icon(Icons.notifications),
+                        label: Text('Notifications'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+
+              _buildFooter(context, isExtended),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, bool isExtended) {
     return Padding(
-      padding: EdgeInsets.all(isExtended ? AppTheme.spaceLg : AppTheme.spaceMd),
+      padding: EdgeInsets.all(isExtended ? 18 : 12),
       child: Row(
         mainAxisAlignment: isExtended
             ? MainAxisAlignment.start
             : MainAxisAlignment.center,
         children: [
-          Image.asset('assets/images/logos/main_logo.jpeg', height: 70),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/logos/main_logo.jpeg',
+              height: 40,
+            ),
+          ),
           if (isExtended) ...[
-            const SizedBox(width: AppTheme.spaceSm),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: const [
                   Text(
-                    'HTOO CHOON',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    "HTOO CHOON",
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.1,
+                      color: Colors.white,
                     ),
                   ),
                   Text(
-                    'Learning Platform',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: 11,
-                    ),
+                    "Learning Platform",
+                    style: TextStyle(fontSize: 11, color: Colors.white70),
                   ),
                 ],
               ),
@@ -290,29 +337,26 @@ class _PremiumNavigationRail extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context, bool isExtended) {
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      padding: const EdgeInsets.all(10),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Theme Toggle
           _FooterButton(
             icon: themeProvider.isDarkMode
                 ? Icons.dark_mode_outlined
                 : Icons.light_mode_outlined,
-            label: 'Theme',
+            label: "Theme",
             isExtended: isExtended,
             onTap: () => themeProvider.toggleTheme(),
           ),
 
-          const SizedBox(height: AppTheme.spaceXs),
+          const SizedBox(height: 6),
 
-          // Logout
           _FooterButton(
             icon: Icons.logout_rounded,
-            label: 'Logout',
+            label: "Logout",
             isExtended: isExtended,
+            color: Colors.orange,
             onTap: () => loginProvider.logout(context),
-            color: AppTheme.error,
           ),
         ],
       ),
@@ -438,4 +482,25 @@ class GlobalOrgSwitchOverlay extends StatelessWidget {
       },
     );
   }
+}
+
+Widget _categoryLabel(BuildContext context, String title, bool isExtended) {
+  if (!isExtended) return const SizedBox.shrink();
+
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+    child: Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white38,
+            fontSize: 11,
+            letterSpacing: 1.4,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
 }

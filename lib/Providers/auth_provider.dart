@@ -35,13 +35,59 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
 
     _accessToken = prefs.getString("access_token");
-    final userJson = prefs.getString("user");
 
-    if (userJson != null) {
-      _user = User.fromJson(jsonDecode(userJson));
-    }
+    _user = User(
+      id: prefs.getString("id") ?? '',
+      email: prefs.getString("email") ?? '',
+      googleId: prefs.getString("googleId") ?? '',
+      name: prefs.getString("name") ?? '',
+      role: prefs.getString("role") ?? '',
+      isActive: prefs.getBool("isActive") ?? false,
+      isTwoFactorEnabled: prefs.getBool("isTwoFactorEnabled") ?? false,
+      twoFactorSecret: prefs.getString("twoFactorSecret") ?? '',
+      createdAt:
+          DateTime.tryParse(prefs.getString("createdAt") ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(prefs.getString("updatedAt") ?? '') ??
+          DateTime.now(),
+    );
 
     notifyListeners();
+  }
+
+  Future<void> saveUserToPrefs(User user, {String? accessToken}) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (accessToken != null) {
+      await prefs.setString("access_token", accessToken);
+    }
+
+    final dataMap = {
+      "id": user.id.toString(),
+      "email": user.email ?? '',
+      "googleId": user.googleId ?? '',
+      "name": user.name ?? '',
+      "role": user.role ?? '',
+      "isActive": user.isActive ?? false,
+      "isTwoFactorEnabled": user.isTwoFactorEnabled ?? false,
+      "twoFactorSecret": user.twoFactorSecret ?? '',
+      "createdAt": user.createdAt?.toIso8601String() ?? '',
+      "updatedAt": user.updatedAt?.toIso8601String() ?? '',
+    };
+
+    for (final entry in dataMap.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (value is String) {
+        await prefs.setString(key, value);
+      } else if (value is bool) {
+        await prefs.setBool(key, value);
+      } else {
+        print("Skipping unsupported type for key: $key");
+      }
+    }
   }
 
   /// =========================
@@ -92,7 +138,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Request OTP without changing loading state (for internal use)
-  Future<RequestOtpResponse?> requestOtpSilent(RequestOtpRequest request) async {
+  Future<RequestOtpResponse?> requestOtpSilent(
+    RequestOtpRequest request,
+  ) async {
     try {
       final response = await apiService.requestOtp(request);
       return response;
@@ -132,49 +180,29 @@ class AuthProvider extends ChangeNotifier {
   /// LOGIN
   /// =========================
   Future<void> login(LoginRequest request, BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       print("Auth_provider: login called");
-      _isLoading = true;
-      notifyListeners();
 
+      // Call API
       final loginResponse = await apiService.login(request);
 
+      // Save user and token
       _accessToken = loginResponse.access_token.toString();
       _user = loginResponse.data;
-      final userJson = loginResponse.data.toJson();
-
-      print('User Data: ${jsonEncode(userJson)}');
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("access_token", _accessToken!.toString());
-
-      await prefs.setString("id", user?.id.toString() ?? '');
-      await prefs.setString("email", user?.email ?? '');
-      await prefs.setString("googleId", user?.googleId ?? '');
-      await prefs.setString("name", user?.name ?? '');
-      await prefs.setString("role", user?.role ?? '');
-      await prefs.setBool("isActive", user?.isActive ?? false);
-      await prefs.setBool(
-        "isTwoFactorEnabled",
-        user?.isTwoFactorEnabled ?? false,
-      );
-      await prefs.setString("twoFactorSecret", user?.twoFactorSecret ?? '');
-      await prefs.setString(
-        "createdAt",
-        user?.createdAt.toIso8601String() ?? '',
-      );
-      await prefs.setString(
-        "updatedAt",
-        user?.updatedAt.toIso8601String() ?? '',
-      );
-      // /// fetch user profile
+      await saveUserToPrefs(_user!, accessToken: _accessToken);
 
       _isLoading = false;
       notifyListeners();
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => OnboardingScreen()),
-      );
+      // Navigate to onboarding
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => OnboardingScreen()),
+        );
+      }
     } catch (e) {
       debugPrint("Login Error: $e");
 

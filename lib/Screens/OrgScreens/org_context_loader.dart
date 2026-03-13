@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/OrgWidgets/create_dialogs.dart';
+import 'package:htoochoon_flutter/Widgets/user_appbar.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
@@ -29,22 +30,9 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
         if (orgProvider.userOrgs.isNotEmpty) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              elevation: 0,
-              backgroundColor: Theme.of(context).cardColor,
-              title: Text(
-                'My Organizations',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () => showCreateOrgDialog(context, orgProvider),
-                  icon: const Icon(Icons.add_circle_outline, size: 22),
-                ),
-                const SizedBox(width: AppTheme.spaceXs),
-              ],
+            appBar: UserAppBar(
+              title: "My Organizations",
+              leadIcon: Icons.business,
             ),
             body: ListView.builder(
               padding: const EdgeInsets.all(AppTheme.spaceLg),
