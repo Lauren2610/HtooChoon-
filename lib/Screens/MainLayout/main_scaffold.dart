@@ -351,13 +351,13 @@ class _PremiumNavigationRail extends StatelessWidget {
 
           const SizedBox(height: 6),
 
-          _FooterButton(
-            icon: Icons.logout_rounded,
-            label: "Logout",
-            isExtended: isExtended,
-            color: Colors.orange,
-            onTap: () => loginProvider.logout(context),
-          ),
+          // _FooterButton(
+          //   icon: Icons.logout_rounded,
+          //   label: "Logout",
+          //   isExtended: isExtended,
+          //   color: Colors.orange,
+          //   onTap: () => loginProvider.logout(context),
+          // ),
         ],
       ),
     );

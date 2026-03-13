@@ -47,8 +47,9 @@ class HomeTab extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: UserAppBar(
+        showSearchIcon: true,
         title: "Dashboard",
-        leadIcon: Icons.notifications_outlined,
+        leadIcon: Icons.dashboard,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLg),

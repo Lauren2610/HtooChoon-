@@ -5,8 +5,14 @@ import 'package:htoochoon_flutter/Widgets/profile_menu.dart';
 class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final IconData? leadIcon;
+  final bool showSearchIcon;
 
-  const UserAppBar({super.key, this.title = '', this.leadIcon});
+  const UserAppBar({
+    super.key,
+    this.title = '',
+    this.leadIcon,
+    required this.showSearchIcon,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -59,22 +65,23 @@ class UserAppBar extends StatelessWidget implements PreferredSizeWidget {
 
         const SizedBox(width: AppTheme.spaceXs),
 
-        IconButton(
-          onPressed: () {},
-          style: IconButton.styleFrom(
-            backgroundColor: Theme.of(context).cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: AppTheme.getBorder(context)),
-            ),
-          ),
-          icon: Icon(
-            Icons.search,
-            size: 20,
-            color: AppTheme.getTextSecondary(context),
-          ),
-        ),
-
+        (showSearchIcon)
+            ? IconButton(
+                onPressed: () {},
+                style: IconButton.styleFrom(
+                  backgroundColor: Theme.of(context).cardColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: AppTheme.getBorder(context)),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.search,
+                  size: 20,
+                  color: AppTheme.getTextSecondary(context),
+                ),
+              )
+            : SizedBox(),
         const SizedBox(width: AppTheme.spaceMd),
 
         ProfileMenu(),

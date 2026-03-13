@@ -14,7 +14,11 @@ class ClassesTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      appBar: UserAppBar(title: "My Classes", leadIcon: Icons.class_outlined),
+      appBar: UserAppBar(
+        showSearchIcon: false,
+        title: "My Classes",
+        leadIcon: Icons.class_outlined,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceLg),
         children: [

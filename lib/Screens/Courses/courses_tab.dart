@@ -12,7 +12,11 @@ class CoursesTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      appBar: UserAppBar(title: "Browse Course", leadIcon: Icons.school),
+      appBar: UserAppBar(
+        showSearchIcon: false,
+        title: "Browse Course",
+        leadIcon: Icons.school,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

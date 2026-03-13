@@ -31,6 +31,7 @@ class _OrgContextLoaderState extends State<OrgContextLoader> {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: UserAppBar(
+              showSearchIcon: false,
               title: "My Organizations",
               leadIcon: Icons.business,
             ),
