@@ -17,11 +17,14 @@ import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
 import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Screens/Teacher/Home/teacher_dashboard_screen.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:htoochoon_flutter/api/api_service.dart';
 import 'package:htoochoon_flutter/firebase_options.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_services.dart'; // DEMO MODE
 import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
-
+import 'package:htoochoon_flutter/WEB_RTC/core/services/socket_service.dart';
+import 'package:htoochoon_flutter/WEB_RTC/core/services/webrtc_service.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // New
@@ -71,6 +74,16 @@ void main() async {
         ), // New
 
         ChangeNotifierProvider(create: (context) => InvitationProvider()),
+        ChangeNotifierProvider(
+          create: (context) => DemoServices(),
+        ), // DEMO MODE
+        Provider<SocketService>(
+          create: (_) => SocketService(baseUrl: 'http://192.168.1.112:3000'),
+        ),
+
+        ProxyProvider<SocketService, WebRTCService>(
+          update: (_, socket, __) => WebRTCService(socket),
+        ),
       ],
       child: const MyApp(),
     ),

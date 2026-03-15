@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
 import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
@@ -262,6 +263,12 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
           name: _usernameController.text.trim(),
         );
         provider.register(registerRequest, context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpScreen(email: registerRequest.email),
+          ),
+        );
       } else {
         LoginRequest loginRequest = LoginRequest(
           email: _emailController.text,

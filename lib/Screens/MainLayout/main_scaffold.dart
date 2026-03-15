@@ -11,6 +11,9 @@ import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_core_hom
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_dashboard_wrapper.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_context_loader.dart';
 import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemented
+import 'package:htoochoon_flutter/WEB_RTC/features/lobby/join_live_by_code_screen.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_constants.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_screens.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
@@ -30,9 +33,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     HomeTab(),
     ClassesTab(),
     CoursesTab(),
-    OrgContextLoader(),
+    DEMO_MODE ? const DemoOrganizationListScreen() : OrgContextLoader(),
     ProfileTab(),
-    NotiAndEmails(),
+    // NotiAndEmails()
+    StudentJoinSessionPage(),
   ];
 
   @override
