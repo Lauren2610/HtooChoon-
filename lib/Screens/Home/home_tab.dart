@@ -1,794 +1,204 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Constants/app_colors.dart';
+import 'package:htoochoon_flutter/Constants/text_constants.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
-import 'package:htoochoon_flutter/Widgets/profile_menu.dart';
 import 'package:htoochoon_flutter/Widgets/user_appbar.dart';
 import 'package:provider/provider.dart';
-import 'package:htoochoon_flutter/Providers/user_provider.dart';
-import 'package:htoochoon_flutter/Theme/themedata.dart';
-//
-// class HomeTab extends StatelessWidget {
-//   const HomeTab({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final authProvider = Provider.of<AuthProvider>(context);
-//     final user = authProvider.user;
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     if (authProvider.isLoading && user == null) {
-//       return const Center(child: CircularProgressIndicator());
-//     }
-//
-//     if (user == null) {
-//       return Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Icon(
-//               Icons.error_outline,
-//               size: 64,
-//               color: AppTheme.getTextTertiary(context),
-//             ),
-//             const SizedBox(height: AppTheme.spaceMd),
-//             Text(
-//               'Unable to load profile',
-//               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-//                 color: AppTheme.getTextSecondary(context),
-//               ),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-//
-//     final displayName = user.name.toString();
-//
-//     return Scaffold(
-//       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-//
-//       appBar: UserAppBar(
-//         showSearchIcon: true,
-//         title: "Dashboard",
-//         leadIcon: Icons.dashboard,
-//       ),
-//       body: SingleChildScrollView(
-//         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLg),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             const SizedBox(height: AppTheme.spaceMd),
-//
-//             // 1. Greeting & Streak Section
-//             Row(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Expanded(
-//                   flex: 3,
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Text(
-//                         'Good Afternoon,',
-//                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-//                           color: AppTheme.getTextSecondary(context),
-//                           fontWeight: FontWeight.w500,
-//                         ),
-//                       ),
-//                       const SizedBox(height: 4),
-//                       Text(
-//                         displayName,
-//                         style: Theme.of(context).textTheme.headlineMedium
-//                             ?.copyWith(
-//                               fontWeight: FontWeight.w700,
-//                               letterSpacing: -0.5,
-//                             ),
-//                       ),
-//                       const SizedBox(height: AppTheme.spaceXs),
-//                       Text(
-//                         "You've completed 80% of your weekly goal. Keep it up!",
-//                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                           color: AppTheme.getTextTertiary(context),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//                 // Spacer or additional action?
-//               ],
-//             ),
-//
-//             const SizedBox(height: AppTheme.spaceLg),
-//
-//             // 2. Premium Streak Card
-//             const _StreakCard(),
-//
-//             const SizedBox(height: AppTheme.space2xl),
-//
-//             // 3. Live Sessions
-//             _SectionHeader(
-//               title: 'Live Sessions',
-//               action: 'View Schedule',
-//               onActionTap: () {},
-//             ),
-//             const SizedBox(height: AppTheme.spaceMd),
-//             const _LiveSessionCard(
-//               title: 'Advanced Flutter Architecture',
-//               time: 'Starting in 5 mins',
-//               instructor: 'Dr. Angela Yu',
-//               isLive: true,
-//             ),
-//
-//             const SizedBox(height: AppTheme.space2xl),
-//
-//             // 4. Jump Back In -> Continue Learning
-//             _SectionHeader(title: 'Jump Back In'),
-//             const SizedBox(height: AppTheme.spaceMd),
-//             SizedBox(
-//               height: 180,
-//               child: ListView(
-//                 scrollDirection: Axis.horizontal,
-//                 clipBehavior: Clip.none,
-//                 children: [
-//                   _CourseProgressCard(
-//                     title: 'Python for Data Science',
-//                     lesson: 'List Comprehensions',
-//                     progress: 0.75,
-//                     color: Colors.indigo,
-//                     icon: Icons.data_usage,
-//                   ),
-//                   const SizedBox(width: AppTheme.spaceMd),
-//                   _CourseProgressCard(
-//                     title: 'UI/UX Principles',
-//                     lesson: 'Color Theory 101',
-//                     progress: 0.30,
-//                     color: Colors.orange,
-//                     icon: Icons.palette,
-//                   ),
-//                   const SizedBox(width: AppTheme.spaceMd),
-//                   _CourseProgressCard(
-//                     title: 'Project Management',
-//                     lesson: 'Agile Methodologies',
-//                     progress: 0.10,
-//                     color: Colors.teal,
-//                     icon: Icons.view_kanban_outlined,
-//                   ),
-//                 ],
-//               ),
-//             ),
-//
-//             const SizedBox(height: AppTheme.space2xl),
-//
-//             // 5. Quick Access Grid
-//             _SectionHeader(title: 'Quick Access'),
-//             const SizedBox(height: AppTheme.spaceMd),
-//             Row(
-//               children: [
-//                 Expanded(
-//                   child: _QuickActionChip(
-//                     label: 'Assignments',
-//                     icon: Icons.assignment_outlined,
-//                     color: Colors.blue,
-//                   ),
-//                 ),
-//                 const SizedBox(width: AppTheme.spaceSm),
-//                 Expanded(
-//                   child: _QuickActionChip(
-//                     label: 'Recordings',
-//                     icon: Icons.video_library_outlined,
-//                     color: Colors.red,
-//                   ),
-//                 ),
-//                 const SizedBox(width: AppTheme.spaceSm),
-//                 Expanded(
-//                   child: _QuickActionChip(
-//                     label: 'Grades',
-//                     icon: Icons.grade_outlined,
-//                     color: Colors.green,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//
-//             const SizedBox(height: AppTheme.space2xl),
-//
-//             // 6. Announcements
-//             _SectionHeader(
-//               title: 'Announcements',
-//               action: 'View All',
-//               onActionTap: () {},
-//             ),
-//             const SizedBox(height: AppTheme.spaceMd),
-//             _AnnouncementCard(
-//               title: 'Mid-term Exam Schedule',
-//               date: '2 hours ago',
-//               preview:
-//                   'The schedule for the upcoming mid-term examinations has been finalized. Please check your personalized...',
-//               category: 'Important',
-//               isHighPriority: true,
-//             ),
-//             const SizedBox(height: AppTheme.spaceSm),
-//             _AnnouncementCard(
-//               title: 'New Python Material',
-//               date: 'Yesterday',
-//               preview:
-//                   "Instructor uploaded 'Advanced list comprehensions' and accompanying practice exercises.",
-//               category: 'Material',
-//             ),
-//
-//             const SizedBox(height: AppTheme.space4xl), // Bottom padding
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-// // -----------------------------------------------------------------------------
-// // COMPONENTS
-// // -----------------------------------------------------------------------------
-//
-// class _SectionHeader extends StatelessWidget {
-//   final String title;
-//   final String? action;
-//   final VoidCallback? onActionTap;
-//
-//   const _SectionHeader({required this.title, this.action, this.onActionTap});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//       crossAxisAlignment: CrossAxisAlignment.end,
-//       children: [
-//         Text(
-//           title,
-//           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-//             fontWeight: FontWeight.w700,
-//             letterSpacing: -0.2,
-//           ),
-//         ),
-//         if (action != null)
-//           GestureDetector(
-//             onTap: onActionTap,
-//             child: Text(
-//               action!,
-//               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                 color: Theme.of(context).colorScheme.primary,
-//                 fontWeight: FontWeight.w600,
-//               ),
-//             ),
-//           ),
-//       ],
-//     );
-//   }
-// }
-//
-// class _StreakCard extends StatelessWidget {
-//   const _StreakCard();
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(AppTheme.spaceLg),
-//       decoration: BoxDecoration(
-//         gradient: LinearGradient(
-//           colors: isDark
-//               ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-//               : [
-//                   const Color(0xFF2563EB),
-//                   const Color(0xFF1D4ED8),
-//                 ], // Blue gradient
-//           begin: Alignment.topLeft,
-//           end: Alignment.bottomRight,
-//         ),
-//         borderRadius: AppTheme.borderRadiusXl,
-//         boxShadow: [
-//           BoxShadow(
-//             color: (isDark ? Colors.black : Colors.blue).withOpacity(0.3),
-//             blurRadius: 20,
-//             offset: const Offset(0, 10),
-//           ),
-//         ],
-//       ),
-//       child: Row(
-//         children: [
-//           // Left: Streak Info
-//           Expanded(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Container(
-//                   padding: const EdgeInsets.symmetric(
-//                     horizontal: 10,
-//                     vertical: 4,
-//                   ),
-//                   decoration: BoxDecoration(
-//                     color: Colors.white.withOpacity(0.2),
-//                     borderRadius: BorderRadius.circular(20),
-//                   ),
-//                   child: Row(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       const Icon(
-//                         Icons.local_fire_department_rounded,
-//                         color: Colors.orangeAccent,
-//                         size: 16,
-//                       ),
-//                       const SizedBox(width: 4),
-//                       Text(
-//                         'Keep it up!',
-//                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-//                           color: Colors.white,
-//                           fontWeight: FontWeight.w600,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//                 const SizedBox(height: AppTheme.spaceSm),
-//                 Text(
-//                   '7 Day Streak',
-//                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-//                     color: Colors.white,
-//                     fontWeight: FontWeight.w700,
-//                     letterSpacing: -0.5,
-//                   ),
-//                 ),
-//                 const SizedBox(height: 4),
-//                 Text(
-//                   "You're learning faster than 85% of peers.",
-//                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                     color: Colors.white.withOpacity(0.8),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//
-//           // Right: Visual Indicator
-//           Container(
-//             height: 60,
-//             width: 60,
-//             decoration: BoxDecoration(
-//               shape: BoxShape.circle,
-//               border: Border.all(
-//                 color: Colors.white.withOpacity(0.3),
-//                 width: 4,
-//               ),
-//             ),
-//             child: Center(
-//               child: Text(
-//                 '7',
-//                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-//                   color: Colors.white,
-//                   fontWeight: FontWeight.bold,
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// class _LiveSessionCard extends StatelessWidget {
-//   final String title;
-//   final String time;
-//   final String instructor;
-//   final bool isLive;
-//
-//   const _LiveSessionCard({
-//     required this.title,
-//     required this.time,
-//     required this.instructor,
-//     this.isLive = false,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     return Container(
-//       decoration: BoxDecoration(
-//         color: Theme.of(context).cardColor,
-//         borderRadius: AppTheme.borderRadiusLg,
-//         border: Border.all(color: AppTheme.getBorder(context)),
-//         boxShadow: AppTheme.shadowSm(isDark),
-//       ),
-//       child: Column(
-//         children: [
-//           // Top: content
-//           Padding(
-//             padding: const EdgeInsets.all(AppTheme.spaceMd),
-//             child: Row(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 ClipRRect(
-//                   borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-//                   child: Container(
-//                     width: 50,
-//                     height: 50,
-//                     color: AppTheme.getSurfaceVariant(context),
-//                     child: Icon(
-//                       Icons.videocam_outlined,
-//                       color: AppTheme.getTextSecondary(context),
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(width: AppTheme.spaceMd),
-//                 Expanded(
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           if (isLive)
-//                             Container(
-//                               padding: const EdgeInsets.symmetric(
-//                                 horizontal: 8,
-//                                 vertical: 2,
-//                               ),
-//                               decoration: BoxDecoration(
-//                                 color: AppTheme.error.withOpacity(0.1),
-//                                 borderRadius: BorderRadius.circular(4),
-//                                 border: Border.all(
-//                                   color: AppTheme.error.withOpacity(0.2),
-//                                 ),
-//                               ),
-//                               child: Row(
-//                                 mainAxisSize: MainAxisSize.min,
-//                                 children: [
-//                                   Container(
-//                                     width: 6,
-//                                     height: 6,
-//                                     decoration: const BoxDecoration(
-//                                       color: AppTheme.error,
-//                                       shape: BoxShape.circle,
-//                                     ),
-//                                   ),
-//                                   const SizedBox(width: 6),
-//                                   Text(
-//                                     'LIVE NOW',
-//                                     style: TextStyle(
-//                                       color: AppTheme.error,
-//                                       fontSize: 10,
-//                                       fontWeight: FontWeight.w700,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           Text(
-//                             time,
-//                             style: Theme.of(context).textTheme.labelSmall
-//                                 ?.copyWith(
-//                                   color: AppTheme.getTextTertiary(context),
-//                                 ),
-//                           ),
-//                         ],
-//                       ),
-//                       const SizedBox(height: AppTheme.spaceXs),
-//                       Text(
-//                         title,
-//                         style: Theme.of(context).textTheme.titleMedium
-//                             ?.copyWith(fontWeight: FontWeight.w600),
-//                       ),
-//                       const SizedBox(height: 4),
-//                       Text(
-//                         'with $instructor',
-//                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                           color: AppTheme.getTextSecondary(context),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//
-//           // Divider
-//           Divider(height: 1, color: AppTheme.getBorder(context)),
-//
-//           // Bottom: Action
-//           InkWell(
-//             onTap: () {},
-//             borderRadius: const BorderRadius.only(
-//               bottomLeft: Radius.circular(AppTheme.radiusLg),
-//               bottomRight: Radius.circular(AppTheme.radiusLg),
-//             ),
-//             child: Container(
-//               padding: const EdgeInsets.symmetric(vertical: 12),
-//               alignment: Alignment.center,
-//               child: Text(
-//                 'Join Session',
-//                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-//                   color: Theme.of(context).colorScheme.primary,
-//                   fontWeight: FontWeight.w600,
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// class _CourseProgressCard extends StatelessWidget {
-//   final String title;
-//   final String lesson;
-//   final double progress;
-//   final Color color;
-//   final IconData icon;
-//
-//   const _CourseProgressCard({
-//     required this.title,
-//     required this.lesson,
-//     required this.progress,
-//     required this.color,
-//     required this.icon,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     return Container(
-//       width: 260,
-//       padding: const EdgeInsets.all(AppTheme.spaceMd),
-//       decoration: BoxDecoration(
-//         color: Theme.of(context).cardColor,
-//         borderRadius: AppTheme.borderRadiusLg,
-//         border: Border.all(color: AppTheme.getBorder(context)),
-//         boxShadow: AppTheme.shadowSm(isDark),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             children: [
-//               Container(
-//                 padding: const EdgeInsets.all(8),
-//                 decoration: BoxDecoration(
-//                   color: color.withOpacity(0.1),
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 child: Icon(icon, color: color, size: 20),
-//               ),
-//               const Spacer(),
-//               Container(
-//                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                 decoration: BoxDecoration(
-//                   color: AppTheme.getSurfaceVariant(context),
-//                   borderRadius: BorderRadius.circular(12),
-//                 ),
-//                 child: Text(
-//                   '${(progress * 100).toInt()}%',
-//                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-//                     fontWeight: FontWeight.w700,
-//                     color: AppTheme.getTextSecondary(context),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: AppTheme.spaceMd),
-//           Text(
-//             title,
-//             maxLines: 1,
-//             overflow: TextOverflow.ellipsis,
-//             style: Theme.of(
-//               context,
-//             ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-//           ),
-//           const SizedBox(height: 4),
-//           Text(
-//             lesson,
-//             maxLines: 1,
-//             overflow: TextOverflow.ellipsis,
-//             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//               color: AppTheme.getTextSecondary(context),
-//             ),
-//           ),
-//           const Spacer(),
-//           // Progress Bar
-//           LinearProgressIndicator(
-//             value: progress,
-//             backgroundColor: AppTheme.getSurfaceVariant(context),
-//             color: color,
-//             borderRadius: BorderRadius.circular(4),
-//           ),
-//           const SizedBox(height: AppTheme.spaceXs),
-//           InkWell(
-//             onTap: () {},
-//             child: Row(
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 Text(
-//                   'Continue',
-//                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-//                     fontWeight: FontWeight.w600,
-//                     color: AppTheme.getTextSecondary(context),
-//                   ),
-//                 ),
-//                 const SizedBox(width: 4),
-//                 Icon(
-//                   Icons.arrow_forward_rounded,
-//                   size: 12,
-//                   color: AppTheme.getTextSecondary(context),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// class _QuickActionChip extends StatelessWidget {
-//   final String label;
-//   final IconData icon;
-//   final Color color;
-//
-//   const _QuickActionChip({
-//     required this.label,
-//     required this.icon,
-//     required this.color,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return InkWell(
-//       onTap: () {},
-//       borderRadius: AppTheme.borderRadiusMd,
-//       child: Container(
-//         padding: const EdgeInsets.symmetric(vertical: 16),
-//         decoration: BoxDecoration(
-//           color: Theme.of(context).cardColor,
-//           borderRadius: AppTheme.borderRadiusMd,
-//           border: Border.all(color: AppTheme.getBorder(context), width: 1),
-//         ),
-//         child: Column(
-//           children: [
-//             Icon(icon, size: 28, color: color),
-//             const SizedBox(height: 12),
-//             Text(
-//               label,
-//               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-//                 fontWeight: FontWeight.w600,
-//                 color: AppTheme.getTextSecondary(context),
-//               ),
-//               textAlign: TextAlign.center,
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-// class _AnnouncementCard extends StatelessWidget {
-//   final String title;
-//   final String date;
-//   final String preview;
-//   final String category;
-//   final bool isHighPriority;
-//
-//   const _AnnouncementCard({
-//     required this.title,
-//     required this.date,
-//     required this.preview,
-//     required this.category,
-//     this.isHighPriority = false,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     return Container(
-//       padding: const EdgeInsets.all(AppTheme.spaceMd),
-//       decoration: BoxDecoration(
-//         color: Theme.of(context).cardColor,
-//         borderRadius: AppTheme.borderRadiusMd,
-//         border: Border.all(
-//           color: isHighPriority
-//               ? AppTheme.warning.withOpacity(0.5)
-//               : AppTheme.getBorder(context),
-//           width: isHighPriority ? 1.5 : 1,
-//         ),
-//         boxShadow: isHighPriority ? AppTheme.shadowSm(isDark) : null,
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Container(
-//                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-//                 decoration: BoxDecoration(
-//                   color: isHighPriority
-//                       ? AppTheme.warning.withOpacity(0.1)
-//                       : AppTheme.getSurfaceVariant(context),
-//                   borderRadius: BorderRadius.circular(4),
-//                 ),
-//                 child: Text(
-//                   category.toUpperCase(),
-//                   style: TextStyle(
-//                     fontSize: 10,
-//                     fontWeight: FontWeight.w700,
-//                     color: isHighPriority
-//                         ? Colors.orange[800]
-//                         : AppTheme.getTextSecondary(context),
-//                   ),
-//                 ),
-//               ),
-//               Text(
-//                 date,
-//                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                   color: AppTheme.getTextTertiary(context),
-//                   fontSize: 11,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: AppTheme.spaceSm),
-//           Text(
-//             title,
-//             style: Theme.of(
-//               context,
-//             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-//           ),
-//           const SizedBox(height: 4),
-//           Text(
-//             preview,
-//             maxLines: 2,
-//             overflow: TextOverflow.ellipsis,
-//             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//               color: AppTheme.getTextSecondary(context),
-//               height: 1.5,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+import 'package:shimmer/shimmer.dart';
 
-class HomeTab extends StatefulWidget {
+class HomeTab extends StatelessWidget {
   const HomeTab({Key? key}) : super(key: key);
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
-}
-
-class _HomeTabState extends State<HomeTab> {
-  @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // =================== LOADING STATE ===================
+    if (authProvider.isLoading && user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // =================== ERROR STATE ===================
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: isDark
+                    ? AppColors.iconErrorDark
+                    : AppColors.iconError, // using your AppColors
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Unable to load profile',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final displayName = user.name.toString();
+
+    // =================== MAIN DASHBOARD ===================
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: UserAppBar(
-        showSearchIcon: true,
         title: "Dashboard",
+        showSearchIcon: true,
         leadIcon: Icons.dashboard,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWeb = constraints.maxWidth > 800;
+
+          if (isWeb) {
+            // 💻 WEB LAYOUT (ROW 2:3)
+            return Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: LeftUserDashboard(),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: RightDashboard(),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // 📱 MOBILE LAYOUT (SCROLL)
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: const [
+                  LeftUserDashboard(),
+                  SizedBox(height: 16),
+                  UpcomingLiveSection(),
+                  SizedBox(height: 16),
+                  EnrolledCoursesSection(),
+                ],
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+class RightDashboard extends StatelessWidget {
+  const RightDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: const [
+          UpcomingLiveSection(),
+          SizedBox(height: 16),
+          EnrolledCoursesSection(),
+        ],
+      ),
+    );
+  }
+}
+
+class UpcomingLiveSection extends StatelessWidget {
+  final bool isLoading;
+  final List<Map<String, String>> liveList;
+
+  const UpcomingLiveSection({
+    super.key,
+    this.isLoading = false,
+    this.liveList = const [
+      {"title": "Physics Live Class", "time": "Today • 6 PM"},
+      {"title": "Math Revision", "time": "Tomorrow • 4 PM"},
+    ],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Upcoming & Live",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+
+        const SizedBox(height: 12),
+
+        if (isLoading)
+          const _LiveSessionShimmer()
+        else
+          Column(
             children: [
-
-        LeftUserDashboard()
-
+              ...liveList.map(
+                (item) => _LiveCard(title: item["title"]!, time: item["time"]!),
+              ),
             ],
+          ),
+      ],
+    );
+  }
+}
+
+class _LiveSessionShimmer extends StatelessWidget {
+  const _LiveSessionShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: List.generate(
+          3,
+          (index) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 150, height: 16, color: Colors.white),
+                    const SizedBox(height: 6),
+                    Container(width: 100, height: 12, color: Colors.white),
+                  ],
+                ),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -796,78 +206,344 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-class ActivityBox extends StatelessWidget {
-  const ActivityBox({
-    super.key,
-  });
+class _LiveCard extends StatelessWidget {
+  final String title;
+  final String time;
+
+  const _LiveCard({required this.title, required this.time});
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
       ),
-
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Text("Your Activity"),
-
-            Row(
-              children: [
-                Container(
-                  child: Column(
-                    children: [
-                      Text("04", style: TextStyle(fontSize: 30)),
-                      Text(
-                        "Course in progess",
-                        style: TextStyle(fontSize: 20),
-                      ),
-                    ],
-                  ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
+              ),
+              Text(
+                time,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: AppColors.buttonPrimary,
+            ),
 
-                Container(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                textAlign: TextAlign.center,
+                "Join Now",
+
+                style: TextStyle(
+                  fontSize: AppTypography.kXs,
+                  color: AppTextColors.kInverse(context),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EnrolledCoursesSection extends StatelessWidget {
+  final bool isLoading;
+  final List<Map<String, dynamic>> courses;
+
+  const EnrolledCoursesSection({
+    super.key,
+    this.isLoading = false,
+    this.courses = const [
+      {
+        "title": "Quantum Physics",
+        "progress": 0.7,
+        "image": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb",
+      },
+      {
+        "title": "Calculus",
+        "progress": 0.4,
+        "image": "https://images.unsplash.com/photo-1509228468518-180dd4864904",
+      },
+    ],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Enrolled Courses",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+
+        const SizedBox(height: 12),
+
+        if (isLoading)
+          const _EnrolledCoursesShimmer()
+        else
+          Column(
+            children: [
+              ...courses.map(
+                (course) => CourseCard(
+                  title: course["title"] as String,
+                  progress: course["progress"] as double,
+                  imageUrl: course["image"] as String,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _EnrolledCoursesShimmer extends StatelessWidget {
+  const _EnrolledCoursesShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: List.generate(
+          2,
+          (index) => Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: Container(color: Colors.white),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("12", style: TextStyle(fontSize: 30)),
-                      Text(
-                        "Task Completed",
-                        style: TextStyle(fontSize: 20),
+                      Container(width: 120, height: 16, color: Colors.white),
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 6),
+                      Container(width: 80, height: 12, color: Colors.white),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 40,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 15),
-            Expanded(
-              child: Container(
-                child: Row(
-                  children: [
-                    Container(
-                      child: Column(
-                        children: [
-                          Text(
-                            "Learning Streak ",
-                            style: TextStyle(fontSize: 24),
-                          ),
-                          Text(
-                            "8days",
-                            style: TextStyle(fontSize: 20),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.stacked_bar_chart,color: Theme.of(context).,),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class CourseCard extends StatelessWidget {
+  final String title;
+  final double progress;
+  final String imageUrl;
+
+  const CourseCard({
+    super.key,
+    required this.title,
+    required this.progress,
+    required this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias, // 👈 important for image
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🖼️ IMAGE
+          SizedBox(
+            height: 140,
+            width: double.infinity,
+            child: Image.network(imageUrl, fit: BoxFit.cover),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 📘 TITLE
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // 📊 PROGRESS BAR
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(value: progress, minHeight: 6),
+                ),
+
+                const SizedBox(height: 6),
+
+                // % TEXT
+                Text(
+                  "${(progress * 100).toInt()}% completed",
+                  style: const TextStyle(fontSize: 12),
+                ),
+
+                const SizedBox(height: 12),
+
+                // 👉 CONTINUE BUTTON
+                GestureDetector(
+                  onTap: () {
+                    // TODO: navigate to lesson
+                    print("Continue tapped");
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text(
+                          "Continue Lesson",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ActivityBox extends StatelessWidget {
+  const ActivityBox({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Your Activity", style: TextStyle(fontSize: 16)),
+
+          SizedBox(height: 16),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStat("04", "Courses in progress"),
+              _buildStat("12", "Tasks completed"),
+            ],
+          ),
+
+          SizedBox(height: 16),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Learning Streak", style: TextStyle(fontSize: 16)),
+                  Text(
+                    "8 days",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Icon(
+                Icons.stacked_bar_chart,
+                color: Theme.of(context).primaryColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStat(String number, String label) {
+    return Column(
+      children: [
+        Text(
+          number,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+        ),
+        Text(label),
+      ],
     );
   }
 }
@@ -878,36 +554,47 @@ class AiMentorSuggestion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Theme.of(context).colorScheme.background,
-                ),
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Colors.white),
+              SizedBox(width: 8),
+              Text(
+                "AI Mentor Suggestion",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
 
-                Text("Ai Mentor Suggestion"),
-                SizedBox(height: 25),
-                Text(
-                  "Based on your last quiz, you should focus on Quantum Entanglement before Thursday's live session.",
-                ),
-                SizedBox(height: 20),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white.withOpacity(0.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Text("Start Review Session"),
-                      Icon(Icons.arrow_forward_rounded),
-                    ],
-                  ),
-                ),
+          SizedBox(height: 12),
+
+          Text(
+            "Based on your last quiz, focus on Quantum Entanglement before Thursday.",
+            style: TextStyle(color: Colors.white),
+          ),
+
+          SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Start Review", style: TextStyle(color: Colors.white)),
+                SizedBox(width: 6),
+                Icon(Icons.arrow_forward_rounded, color: Colors.white),
               ],
             ),
           ),
@@ -922,9 +609,21 @@ class LeftUserDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      AiMentorSuggestion(),
-      ActivityBox(),
-    ]);
+    final authProvider = Provider.of<AuthProvider>(context);
+    final userName = authProvider.user?.name ?? 'User';
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('WELCOME BACK, $userName', style: AppTypography.kBody),
+        const SizedBox(height: 4),
+        Text('READY TO LEARN?', style: AppTypography.kDisplayMedium),
+        const SizedBox(height: 16),
+        const AiMentorSuggestion(),
+        const SizedBox(height: 16),
+        const ActivityBox(),
+      ],
+    );
   }
 }
