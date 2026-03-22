@@ -161,8 +161,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _drawerItem(IconData icon, String label, int index) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.inversePrimary),
+      title: Text(
+        label,
+        style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary),
+      ),
       selected: _selectedIndex == index,
       onTap: () {
         Navigator.pop(context);
@@ -191,6 +194,7 @@ class _PremiumNavigationRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.inversePrimary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ClipRRect(
@@ -201,7 +205,7 @@ class _PremiumNavigationRail extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.black.withOpacity(0.35)
-                : Theme.of(context).colorScheme.primary,
+                : Theme.of(context).scaffoldBackgroundColor,
             border: Border(
               right: BorderSide(
                 color: Colors.white.withOpacity(0.08),
@@ -219,22 +223,19 @@ class _PremiumNavigationRail extends StatelessWidget {
                 child: Theme(
                   data: Theme.of(context).copyWith(
                     navigationRailTheme: NavigationRailThemeData(
-                      selectedIconTheme: const IconThemeData(
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      selectedIconTheme: IconThemeData(color: color, size: 22),
                       unselectedIconTheme: IconThemeData(
-                        color: Colors.white.withOpacity(0.7),
+                        color: color.withOpacity(0.7),
                         size: 21,
                       ),
-                      selectedLabelTextStyle: const TextStyle(
-                        color: Colors.white,
+                      selectedLabelTextStyle: TextStyle(
+                        color: color,
                         fontWeight: FontWeight.w600,
                       ),
                       unselectedLabelTextStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: color.withOpacity(0.7),
                       ),
-                      indicatorColor: Colors.white.withOpacity(0.12),
+                      indicatorColor: color.withOpacity(0.12),
                       useIndicator: true,
                     ),
                   ),

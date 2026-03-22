@@ -129,7 +129,7 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.isDarkMode
               ? ThemeMode.dark
               : ThemeMode.light,
-          home: HomeTab(),
+          home: AuthWrapper(),
         );
       },
     );
@@ -148,7 +148,7 @@ class AuthWrapper extends StatelessWidget {
     }
 
     if (authProvider.accessToken != null) {
-      return OnboardingScreen();
+      return MainScaffold();
     }
 
     return const PremiumLoginScreen();
