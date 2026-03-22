@@ -9,10 +9,11 @@ class AppTheme {
   // ============================================================
 
   // Light Theme Colors
-  static const _lightPrimary = Color(0xFF0F172A); // Slate 900
-  static const _lightPrimaryVariant = Color(0xFF1E293B); // Slate 800
+
+  // static const _lightPrimaryVariant = Color(0xFF1E293B); // Slate 800
+  // static const _lightAccentVariant = Color(0xFF152238); // Blue 600
   static const _lightAccent = Color(0xFF1c2e4a); // Blue 500
-  static const _lightAccentVariant = Color(0xFF152238); // Blue 600
+  static const _lightPrimary = Color(0xFF0F172A); // Slate 900
 
   static const _lightBackground = Color(0xFFFAFAFA); // Neutral 50
   static const _lightSurface = Color(0xFFFFFFFF);

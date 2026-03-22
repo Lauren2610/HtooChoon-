@@ -1,75 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/WEB_RTC/features/lobby/lobby_page.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_services.dart';
+import 'package:htoochoon_flutter/lms_demo/models.dart';
+import 'package:provider/provider.dart';
 
 class LiveSessionListScreen extends StatelessWidget {
   final String classId;
-  const LiveSessionListScreen({super.key, required this.classId});
+  final String role;
+
+  const LiveSessionListScreen({
+    super.key,
+    required this.classId,
+    required this.role,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Mock live sessions
-    final sessions = [
-      {
-        'title': 'Chapter 4 Review',
-        'startTime': DateTime.now().add(const Duration(hours: 2)),
-        'status': 'upcoming',
-      },
-      {
-        'title': 'Project Discussion',
-        'startTime': DateTime.now().subtract(const Duration(days: 1)),
-        'status': 'ended',
-      },
-    ];
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    if (sessions.isEmpty) {
-      return const Center(child: Text("No live sessions scheduled."));
+    //TODO participant id from live session list screen
+    final participantId = authProvider.userId;
+    final services = context.watch<DemoServices>();
+
+    final session = services.getSessionForCourse(classId);
+    final isLive = session?.status == "live";
+
+    return Card(
+      elevation: isLive ? 3 : 1,
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isLive
+            ? const BorderSide(color: Colors.redAccent, width: 2)
+            : BorderSide.none,
+      ),
+      child: ListTile(
+        leading: Icon(Icons.videocam, color: isLive ? Colors.red : Colors.grey),
+        title: Text(
+          classId,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(isLive ? "Live now" : "Waiting for teacher"),
+        trailing: _buildActionButton(
+          participantId.toString(),
+          context,
+          role,
+          classId,
+          isLive,
+          services,
+          session,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String participantId,
+    BuildContext context,
+    String role,
+    String course,
+    bool isLive,
+    DemoServices services,
+    DemoLiveSession? session,
+  ) {
+    if (role == "teacher") {
+      if (isLive) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton(
+              onPressed: () => services.endSession(classId),
+              child: const Text("End"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LobbyPage(
+                      roomId: session!.id,
+                      participantId: participantId,
+                    ),
+                  ),
+                );
+              },
+              child: const Text("Rejoin"),
+            ),
+          ],
+        );
+      }
+
+      return ElevatedButton(
+        onPressed: () async {
+          final newSession = await services.startSession(classId);
+
+          print("🎉 Join code for students: ${newSession?.joinCode}");
+          if (newSession == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Failed to start session")),
+            );
+            return;
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LobbyPage(
+                roomId: newSession.id,
+                participantId: participantId,
+              ),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+        child: const Text("Start"),
+      );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: sessions.length,
-      itemBuilder: (context, index) {
-        final session = sessions[index];
-        final status = session['status'] as String;
-        final isUpcoming = status == 'upcoming';
+    /// student
+    if (isLive) {
+      return ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  LobbyPage(roomId: session!.id, participantId: participantId),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+        child: const Text("Join"),
+      );
+    }
 
-        return Card(
-          elevation: isUpcoming ? 2 : 0,
-          color: isUpcoming ? null : Colors.grey[50],
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isUpcoming ? Colors.red.withOpacity(0.1) : Colors.grey[200],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.videocam,
-                color: isUpcoming ? Colors.red : Colors.grey,
-              ),
-            ),
-            title: Text(
-              session['title'] as String,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isUpcoming ? Colors.black : Colors.grey,
-              ),
-            ),
-            subtitle: Text(isUpcoming ? 'Starts in 2 hours' : 'Ended yesterday'),
-            trailing: isUpcoming
-                ? ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Text('Join'),
-                  )
-                : const Chip(label: Text('Ended')),
-          ),
-        );
-      },
-    );
+    return const Text("Waiting...", style: TextStyle(color: Colors.grey));
   }
 }

@@ -11,11 +11,13 @@ import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/OrgWidgets/o
 class ClassDetailScreen extends StatelessWidget {
   final String classId;
   final String className;
+  final String role;
 
   const ClassDetailScreen({
     super.key,
     required this.classId,
     required this.className,
+    required this.role,
   });
 
   @override
@@ -42,10 +44,10 @@ class ClassDetailScreen extends StatelessWidget {
                   _buildOverviewTab(context),
                   LmsHomeScreen(
                     userId: loginProvider.uid.toString(),
-                    userRole: "teacher", // handled constantly by screens
+                    userRole: "teacher",
                     classId: classId,
                   ),
-                  LiveSessionListScreen(classId: classId),
+                  LiveSessionListScreen(classId: classId, role: role),
                   _buildPeopleTab(context, orgProvider),
                 ],
               ),

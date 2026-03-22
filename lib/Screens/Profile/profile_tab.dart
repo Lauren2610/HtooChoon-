@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Providers/user_provider.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'dart:io';
@@ -418,6 +419,12 @@ class _ProfileTabState extends State<ProfileTab> {
                         const SnackBar(
                           content: Text('Logged out successfully'),
                           backgroundColor: AppTheme.success,
+                        ),
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PremiumLoginScreen(),
                         ),
                       );
                     }
