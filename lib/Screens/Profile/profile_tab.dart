@@ -18,6 +18,1856 @@ import 'package:htoochoon_flutter/Providers/user_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+// settings_screen.dart
+// Full settings page with 5 tabs: General, Profile, Organizations, Security, Notifications
+// Layout: Left settings-nav sidebar + right content area (web) or single scroll (mobile)
+// Matches screenshot pixel-accurately for General tab.
+// All other tabs follow the same visual language.
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENTRY — SettingsScreen
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _selectedTab = 0;
+
+  static const List<_SettingsNavItem> _navItems = [
+    _SettingsNavItem(
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings,
+      label: 'General',
+    ),
+    _SettingsNavItem(
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      label: 'Profile',
+    ),
+    _SettingsNavItem(
+      icon: Icons.business_outlined,
+      selectedIcon: Icons.business,
+      label: 'Organizations',
+    ),
+    _SettingsNavItem(
+      icon: Icons.shield_outlined,
+      selectedIcon: Icons.shield,
+      label: 'Security',
+    ),
+    _SettingsNavItem(
+      icon: Icons.notifications_none,
+      selectedIcon: Icons.notifications,
+      label: 'Notifications',
+    ),
+  ];
+
+  Widget get _currentTab => switch (_selectedTab) {
+    0 => const _GeneralTab(),
+    1 => const _ProfileTab(),
+    2 => const _OrganizationsTab(),
+    3 => const _SecurityTab(),
+    4 => const _NotificationsTab(),
+    _ => const _GeneralTab(),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 700;
+
+          return Column(
+            children: [
+              // ── Top AppBar ──────────────────────────────────────────────
+              _SettingsAppBar(),
+
+              Expanded(
+                child: isWide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left settings nav
+                          _SettingsNav(
+                            items: _navItems,
+                            selectedIndex: _selectedTab,
+                            onTap: (i) => setState(() => _selectedTab = i),
+                          ),
+                          // Content
+                          Expanded(child: _currentTab),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          // Mobile: horizontal tab bar
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spaceMd,
+                              vertical: AppTheme.spaceXs,
+                            ),
+                            child: Row(
+                              children: List.generate(_navItems.length, (i) {
+                                final item = _navItems[i];
+                                final sel = _selectedTab == i;
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedTab = i),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    margin: const EdgeInsets.only(
+                                      right: AppTheme.spaceXs,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppTheme.spaceMd,
+                                      vertical: AppTheme.spaceXs,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: sel
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : AppTheme.getSurfaceVariant(context),
+                                      borderRadius: AppTheme.borderRadiusMd,
+                                    ),
+                                    child: Text(
+                                      item.label,
+                                      style: TextStyle(
+                                        color: sel
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimary
+                                            : AppTheme.getTextSecondary(
+                                                context,
+                                              ),
+                                        fontWeight: sel
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          Expanded(child: _currentTab),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETTINGS APP BAR  (matches screenshot: title left, search + help + avatar right)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _SettingsAppBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLg,
+        vertical: AppTheme.spaceMd,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(color: AppTheme.getBorder(context), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Settings',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          // Search bar
+          SizedBox(
+            width: 220,
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search settings...',
+                hintStyle: TextStyle(
+                  color: AppTheme.getTextTertiary(context),
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: AppTheme.getTextTertiary(context),
+                ),
+                filled: true,
+                fillColor: AppTheme.getSurfaceVariant(context),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: AppTheme.borderRadiusXl,
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: AppTheme.borderRadiusXl,
+                  borderSide: BorderSide(color: AppTheme.getBorder(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: AppTheme.borderRadiusXl,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          // Help icon
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Icons.help_outline_rounded,
+              color: AppTheme.getTextSecondary(context),
+            ),
+          ),
+          // Avatar
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                'AT',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEFT SETTINGS NAV  (matches sidebar in screenshot)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _SettingsNavItem {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  const _SettingsNavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+}
+
+class _SettingsNav extends StatelessWidget {
+  final List<_SettingsNavItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+
+  const _SettingsNav({
+    required this.items,
+    required this.selectedIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(color: AppTheme.getBorder(context), width: 1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppTheme.spaceXs),
+          ...List.generate(items.length, (i) {
+            final item = items[i];
+            final sel = selectedIndex == i;
+            return _SettingsNavRow(
+              icon: sel ? item.selectedIcon : item.icon,
+              label: item.label,
+              isSelected: sel,
+              onTap: () => onTap(i),
+            );
+          }),
+          const Spacer(),
+          // Bottom links matching screenshot
+          _SettingsNavRow(
+            icon: Icons.help_outline_rounded,
+            label: 'Help',
+            isSelected: false,
+            onTap: () {},
+          ),
+          const SizedBox(height: AppTheme.space2xs),
+          _SettingsNavRow(
+            icon: Icons.logout_rounded,
+            label: 'Logout',
+            isSelected: false,
+            onTap: () {},
+            color: AppTheme.warning,
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          // CTA button at bottom
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppTheme.borderRadiusMd,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+              ),
+              child: const Text(
+                'Start your own Org',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsNavRow extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _SettingsNavRow({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  State<_SettingsNavRow> createState() => _SettingsNavRowState();
+}
+
+class _SettingsNavRowState extends State<_SettingsNavRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final color =
+        widget.color ??
+        (widget.isSelected ? primary : AppTheme.getTextSecondary(context));
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          margin: const EdgeInsets.symmetric(vertical: 1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spaceSm,
+            vertical: AppTheme.spaceSm,
+          ),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? primary.withOpacity(0.08)
+                : _hovered
+                ? AppTheme.getSurfaceVariant(context)
+                : Colors.transparent,
+            borderRadius: AppTheme.borderRadiusMd,
+            // Right-accent bar on selected — matches PremiumSidebar style
+            border: widget.isSelected
+                ? Border(right: BorderSide(color: primary, width: 3))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(widget.icon, size: 20, color: color),
+              const SizedBox(width: AppTheme.spaceSm),
+              Text(
+                widget.label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARED WIDGETS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Standard card wrapper used across all setting sections
+class _SettingsCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  const _SettingsCard({required this.child, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding ?? const EdgeInsets.all(AppTheme.spaceLg),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: AppTheme.borderRadiusLg,
+        border: Border.all(color: AppTheme.getBorder(context), width: 1),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Section title + optional subtitle + optional trailing action
+class _SectionHeader extends StatelessWidget {
+  final IconData? icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+
+  const _SectionHeader({
+    this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 20, color: AppTheme.getTextSecondary(context)),
+          const SizedBox(width: AppTheme.spaceXs),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: AppTheme.space2xs),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.getTextSecondary(context),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+/// Labeled text field matching the screenshot style
+class _SettingsField extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool readOnly;
+
+  const _SettingsField({
+    required this.label,
+    required this.value,
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppTheme.getTextTertiary(context),
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: AppTheme.space2xs),
+        TextFormField(
+          initialValue: value,
+          readOnly: readOnly,
+          style: Theme.of(context).textTheme.bodyMedium,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: readOnly
+                ? AppTheme.getSurfaceVariant(context)
+                : Theme.of(context).cardColor,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMd,
+              vertical: AppTheme.spaceSm,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: AppTheme.borderRadiusMd,
+              borderSide: BorderSide(color: AppTheme.getBorder(context)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppTheme.borderRadiusMd,
+              borderSide: BorderSide(color: AppTheme.getBorder(context)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: AppTheme.borderRadiusMd,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Row with label, optional subtitle, and trailing widget (toggle, badge, arrow)
+class _SettingsRow extends StatefulWidget {
+  final IconData? leadingIcon;
+  final String title;
+  final String? subtitle;
+  final Widget trailing;
+  final VoidCallback? onTap;
+
+  const _SettingsRow({
+    this.leadingIcon,
+    required this.title,
+    this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
+
+  @override
+  State<_SettingsRow> createState() => _SettingsRowState();
+}
+
+class _SettingsRowState extends State<_SettingsRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spaceMd,
+            vertical: AppTheme.spaceMd,
+          ),
+          decoration: BoxDecoration(
+            color: _hovered && widget.onTap != null
+                ? AppTheme.getSurfaceVariant(context)
+                : Theme.of(context).cardColor,
+            borderRadius: AppTheme.borderRadiusMd,
+            border: Border.all(color: AppTheme.getBorder(context), width: 1),
+          ),
+          child: Row(
+            children: [
+              if (widget.leadingIcon != null) ...[
+                Icon(
+                  widget.leadingIcon,
+                  size: 20,
+                  color: AppTheme.getTextSecondary(context),
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.subtitle!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.getTextSecondary(context),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              widget.trailing,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small colored badge (ADMIN, INSTRUCTOR, Enabled, etc.)
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color? color;
+
+  const _Badge({required this.label, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: c,
+        borderRadius: AppTheme.borderRadiusSm,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 0 — GENERAL  (matches screenshot exactly)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _GeneralTab extends StatefulWidget {
+  const _GeneralTab();
+
+  @override
+  State<_GeneralTab> createState() => _GeneralTabState();
+}
+
+class _GeneralTabState extends State<_GeneralTab> {
+  bool _darkMode = false;
+  bool _notifyCourses = true;
+  bool _notifyAi = true;
+  String _language = 'English (US)';
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+
+          return isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 3, child: _leftContent()),
+                    const SizedBox(width: AppTheme.spaceLg),
+                    SizedBox(width: 280, child: _rightContent()),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _leftContent(),
+                    const SizedBox(height: AppTheme.spaceLg),
+                    _rightContent(),
+                  ],
+                );
+        },
+      ),
+    );
+  }
+
+  Widget _leftContent() {
+    return Column(
+      children: [
+        // ── Profile Information card ────────────────────────────────────
+        _SettingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(
+                title: 'Profile Information',
+                subtitle:
+                    'Update your personal details and how others see you on the platform.',
+                trailing: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceLg,
+                      vertical: AppTheme.spaceMd,
+                    ),
+                  ),
+                  child: const Text(
+                    'Update\nProfile',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spaceLg),
+
+              // Profile form card (inner)
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceLg),
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurfaceVariant(context),
+                  borderRadius: AppTheme.borderRadiusMd,
+                  border: Border.all(color: AppTheme.getBorder(context)),
+                ),
+                child: Column(
+                  children: [
+                    // Avatar row
+                    Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: AppTheme.getSurfaceVariant(context),
+                                borderRadius: AppTheme.borderRadiusLg,
+                                border: Border.all(
+                                  color: AppTheme.getBorder(context),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.person_outline,
+                                size: 36,
+                                color: AppTheme.getTextTertiary(context),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.spaceLg),
+
+                    // Fields row
+                    Row(
+                      children: const [
+                        Expanded(
+                          child: _SettingsField(
+                            label: 'FULL NAME',
+                            value: 'Alex Thompson',
+                          ),
+                        ),
+                        SizedBox(width: AppTheme.spaceMd),
+                        Expanded(
+                          child: _SettingsField(
+                            label: 'EMAIL ADDRESS',
+                            value: 'alex.t@htoochoon.edu',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppTheme.spaceLg),
+
+        // ── My Organizations card ───────────────────────────────────────
+        _SettingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(
+                title: 'My Organizations',
+                subtitle: 'Manage your institutional roles and associations.',
+                trailing: ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text(
+                    'Start your own Organization',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceMd,
+                      vertical: AppTheme.spaceSm,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spaceLg),
+
+              // Org tiles grid
+              Row(
+                children: [
+                  Expanded(
+                    child: _OrgCard(
+                      icon: Icons.school_outlined,
+                      name: 'Global Design Academy',
+                      meta: '1,240 active students',
+                      role: 'ADMIN',
+                      roleColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  Expanded(
+                    child: _OrgCard(
+                      icon: Icons.code,
+                      name: 'Modern Code Labs',
+                      meta: '85 active students',
+                      role: 'INSTRUCTOR',
+                      roleColor: const Color(0xFF0D9488),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _rightContent() {
+    return Column(
+      children: [
+        // ── Preferences card ──────────────────────────────────────────
+        _SettingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(icon: Icons.tune_rounded, title: 'Preferences'),
+              const SizedBox(height: AppTheme.spaceMd),
+
+              // Dark mode row
+              _SettingsRow(
+                title: 'Dark Mode',
+                subtitle: 'Switch to dark interface',
+                trailing: Switch(
+                  value: _darkMode,
+                  onChanged: (v) => setState(() => _darkMode = v),
+                  activeColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+
+              const SizedBox(height: AppTheme.spaceMd),
+
+              // Language dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Language',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.getTextSecondary(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spaceXs),
+                  DropdownButtonFormField<String>(
+                    value: _language,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceMd,
+                        vertical: AppTheme.spaceSm,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: AppTheme.borderRadiusMd,
+                        borderSide: BorderSide(
+                          color: AppTheme.getBorder(context),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: AppTheme.borderRadiusMd,
+                        borderSide: BorderSide(
+                          color: AppTheme.getBorder(context),
+                        ),
+                      ),
+                    ),
+                    items: ['English (US)', 'Myanmar', 'Chinese', 'Japanese']
+                        .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _language = v!),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppTheme.spaceMd),
+
+              // Notify me about
+              Text(
+                'Notify me about',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.getTextSecondary(context),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spaceXs),
+              _CheckRow(
+                label: 'New course materials',
+                value: _notifyCourses,
+                onChanged: (v) => setState(() => _notifyCourses = v),
+              ),
+              const SizedBox(height: AppTheme.spaceXs),
+              _CheckRow(
+                label: 'AI performance insights',
+                value: _notifyAi,
+                onChanged: (v) => setState(() => _notifyAi = v),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppTheme.spaceMd),
+
+        // ── Security card ─────────────────────────────────────────────
+        _SettingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(icon: Icons.shield_outlined, title: 'Security'),
+              const SizedBox(height: AppTheme.spaceMd),
+              _SettingsRow(
+                leadingIcon: Icons.lock_outline_rounded,
+                title: 'Change Password',
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () {},
+              ),
+              const SizedBox(height: AppTheme.spaceSm),
+              _SettingsRow(
+                title: '2FA Authentication',
+                subtitle:
+                    'Two-factor authentication adds an extra layer of security to your account.',
+                trailing: const _Badge(
+                  label: 'Enabled',
+                  color: Color(0xFF16A34A),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppTheme.spaceMd),
+
+        // ── AI Security Insight card ──────────────────────────────────
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: AppTheme.borderRadiusLg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+                  const SizedBox(width: AppTheme.spaceXs),
+                  Text(
+                    'AI SECURITY INSIGHT',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spaceSm),
+              Text(
+                'Your profile is 85% secure. Complete your bio and verification to reach 100%.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Org card (used in General tab) ───────────────────────────────────────────
+
+class _OrgCard extends StatefulWidget {
+  final IconData icon;
+  final String name;
+  final String meta;
+  final String role;
+  final Color roleColor;
+
+  const _OrgCard({
+    required this.icon,
+    required this.name,
+    required this.meta,
+    required this.role,
+    required this.roleColor,
+  });
+
+  @override
+  State<_OrgCard> createState() => _OrgCardState();
+}
+
+class _OrgCardState extends State<_OrgCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        decoration: BoxDecoration(
+          color: _hovered
+              ? AppTheme.getSurfaceVariant(context)
+              : Theme.of(context).cardColor,
+          borderRadius: AppTheme.borderRadiusMd,
+          border: Border.all(color: AppTheme.getBorder(context)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: widget.roleColor.withOpacity(0.12),
+                    borderRadius: AppTheme.borderRadiusMd,
+                  ),
+                  child: Icon(widget.icon, color: widget.roleColor, size: 22),
+                ),
+                _Badge(label: widget.role, color: widget.roleColor),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Text(
+              widget.name,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppTheme.space2xs),
+            Text(
+              widget.meta,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.getTextSecondary(context),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Checkbox row ──────────────────────────────────────────────────────────────
+
+class _CheckRow extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _CheckRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: Checkbox(
+            value: value,
+            onChanged: (v) => onChanged(v!),
+            activeColor: Theme.of(context).colorScheme.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceXs),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppTheme.getTextSecondary(context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 1 — PROFILE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ProfileTab extends StatelessWidget {
+  const _ProfileTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      child: Column(
+        children: [
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'Public Profile',
+                  subtitle: 'This is how others see you across the platform.',
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                // Avatar upload
+                Row(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'AT',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).cardColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: AppTheme.spaceLg),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Alex Thompson',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Student · Global Design Academy',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.getTextSecondary(context),
+                              ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceXs),
+                        OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.upload, size: 14),
+                          label: const Text(
+                            'Upload Photo',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppTheme.borderRadiusMd,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spaceMd,
+                              vertical: AppTheme.spaceXs,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                const Row(
+                  children: [
+                    Expanded(
+                      child: _SettingsField(
+                        label: 'FULL NAME',
+                        value: 'Alex Thompson',
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spaceMd),
+                    Expanded(
+                      child: _SettingsField(label: 'USERNAME', value: 'alex.t'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                const Row(
+                  children: [
+                    Expanded(
+                      child: _SettingsField(
+                        label: 'EMAIL ADDRESS',
+                        value: 'alex.t@htoochoon.edu',
+                        readOnly: true,
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spaceMd),
+                    Expanded(
+                      child: _SettingsField(
+                        label: 'PHONE NUMBER',
+                        value: '+1 (555) 000-0000',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                const _SettingsField(
+                  label: 'BIO',
+                  value: 'Learning enthusiast and aspiring designer.',
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppTheme.borderRadiusMd,
+                      ),
+                    ),
+                    child: const Text('Save Changes'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 2 — ORGANIZATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _OrganizationsTab extends StatelessWidget {
+  const _OrganizationsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      child: Column(
+        children: [
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'My Organizations',
+                  subtitle: 'Manage your roles and institutional associations.',
+                  trailing: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Create New',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppTheme.borderRadiusMd,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                _OrgListTile(
+                  icon: Icons.school_outlined,
+                  name: 'Global Design Academy',
+                  meta: '1,240 active students',
+                  role: 'ADMIN',
+                  roleColor: Theme.of(context).colorScheme.primary,
+                  onTap: () {},
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                _OrgListTile(
+                  icon: Icons.code,
+                  name: 'Modern Code Labs',
+                  meta: '85 active students',
+                  role: 'INSTRUCTOR',
+                  roleColor: const Color(0xFF0D9488),
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppTheme.spaceLg),
+
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'Invitations',
+                  subtitle: 'Pending organization invitations.',
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getSurfaceVariant(context),
+                    borderRadius: AppTheme.borderRadiusMd,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.mail_outline_rounded,
+                        color: AppTheme.getTextTertiary(context),
+                      ),
+                      const SizedBox(width: AppTheme.spaceSm),
+                      Text(
+                        'No pending invitations',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrgListTile extends StatefulWidget {
+  final IconData icon;
+  final String name;
+  final String meta;
+  final String role;
+  final Color roleColor;
+  final VoidCallback onTap;
+
+  const _OrgListTile({
+    required this.icon,
+    required this.name,
+    required this.meta,
+    required this.role,
+    required this.roleColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_OrgListTile> createState() => _OrgListTileState();
+}
+
+class _OrgListTileState extends State<_OrgListTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? AppTheme.getSurfaceVariant(context)
+                : Theme.of(context).cardColor,
+            borderRadius: AppTheme.borderRadiusMd,
+            border: Border.all(color: AppTheme.getBorder(context)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: widget.roleColor.withOpacity(0.12),
+                  borderRadius: AppTheme.borderRadiusMd,
+                ),
+                child: Icon(widget.icon, color: widget.roleColor, size: 22),
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.name,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      widget.meta,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.getTextSecondary(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _Badge(label: widget.role, color: widget.roleColor),
+              const SizedBox(width: AppTheme.spaceXs),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppTheme.getTextTertiary(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 3 — SECURITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _SecurityTab extends StatefulWidget {
+  const _SecurityTab();
+
+  @override
+  State<_SecurityTab> createState() => _SecurityTabState();
+}
+
+class _SecurityTabState extends State<_SecurityTab> {
+  bool _twoFa = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      child: Column(
+        children: [
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.lock_outline_rounded,
+                  title: 'Change Password',
+                  subtitle: 'Use a strong password you don\'t use elsewhere.',
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                const _SettingsField(label: 'CURRENT PASSWORD', value: ''),
+                const SizedBox(height: AppTheme.spaceMd),
+                const Row(
+                  children: [
+                    Expanded(
+                      child: _SettingsField(label: 'NEW PASSWORD', value: ''),
+                    ),
+                    SizedBox(width: AppTheme.spaceMd),
+                    Expanded(
+                      child: _SettingsField(
+                        label: 'CONFIRM PASSWORD',
+                        value: '',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppTheme.borderRadiusMd,
+                    ),
+                  ),
+                  child: const Text('Update Password'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppTheme.spaceLg),
+
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.shield_outlined,
+                  title: '2FA Authentication',
+                  subtitle: 'Add an extra layer of security to your account.',
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                _SettingsRow(
+                  title: 'Two-Factor Authentication',
+                  subtitle: 'Require a code each time you sign in.',
+                  trailing: Switch(
+                    value: _twoFa,
+                    onChanged: (v) => setState(() => _twoFa = v),
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppTheme.spaceLg),
+
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.devices_outlined,
+                  title: 'Active Sessions',
+                  subtitle: 'Devices currently signed in to your account.',
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                _SessionRow(
+                  device: 'MacBook Pro · Chrome',
+                  location: 'Yangon, Myanmar · Current session',
+                  isCurrent: true,
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                _SessionRow(
+                  device: 'iPhone 15 · Safari',
+                  location: 'Yangon, Myanmar · 2 hours ago',
+                  isCurrent: false,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionRow extends StatelessWidget {
+  final String device;
+  final String location;
+  final bool isCurrent;
+
+  const _SessionRow({
+    required this.device,
+    required this.location,
+    required this.isCurrent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceVariant(context),
+        borderRadius: AppTheme.borderRadiusMd,
+        border: Border.all(color: AppTheme.getBorder(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.computer_rounded,
+            size: 20,
+            color: AppTheme.getTextSecondary(context),
+          ),
+          const SizedBox(width: AppTheme.spaceMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  device,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  location,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isCurrent)
+            _Badge(label: 'Current', color: const Color(0xFF16A34A))
+          else
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.warning,
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text('Revoke', style: TextStyle(fontSize: 12)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 4 — NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _NotificationsTab extends StatefulWidget {
+  const _NotificationsTab();
+
+  @override
+  State<_NotificationsTab> createState() => _NotificationsTabState();
+}
+
+class _NotificationsTabState extends State<_NotificationsTab> {
+  bool _courseUpdates = true;
+  bool _aiInsights = true;
+  bool _liveAlerts = true;
+  bool _weeklyReport = false;
+  bool _emailDigest = true;
+  bool _pushNotifs = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      child: Column(
+        children: [
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.notifications_outlined,
+                  title: 'In-App Notifications',
+                  subtitle:
+                      'Choose what you\'re notified about inside the platform.',
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                _SwitchRow(
+                  label: 'New course materials',
+                  value: _courseUpdates,
+                  onChanged: (v) => setState(() => _courseUpdates = v),
+                ),
+                _SwitchRow(
+                  label: 'AI performance insights',
+                  value: _aiInsights,
+                  onChanged: (v) => setState(() => _aiInsights = v),
+                ),
+                _SwitchRow(
+                  label: 'Live class reminders',
+                  value: _liveAlerts,
+                  onChanged: (v) => setState(() => _liveAlerts = v),
+                ),
+                _SwitchRow(
+                  label: 'Weekly progress report',
+                  value: _weeklyReport,
+                  onChanged: (v) => setState(() => _weeklyReport = v),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppTheme.spaceLg),
+
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.email_outlined,
+                  title: 'Email & Push',
+                  subtitle: 'Manage external notification channels.',
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                _SwitchRow(
+                  label: 'Email digest (weekly)',
+                  value: _emailDigest,
+                  onChanged: (v) => setState(() => _emailDigest = v),
+                ),
+                _SwitchRow(
+                  label: 'Push notifications',
+                  value: _pushNotifs,
+                  onChanged: (v) => setState(() => _pushNotifs = v),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXs),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: Theme.of(context).colorScheme.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class ProfileTab extends StatefulWidget {
   ProfileTab({super.key});

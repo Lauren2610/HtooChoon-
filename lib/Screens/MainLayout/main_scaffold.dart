@@ -7,11 +7,12 @@ import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Screens/Classes/classes_tab.dart';
 import 'package:htoochoon_flutter/Screens/Courses/courses_tab.dart';
 import 'package:htoochoon_flutter/Screens/Home/home_tab.dart';
+import 'package:htoochoon_flutter/Screens/Notification/notification.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_dashboard_wrapper.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_context_loader.dart';
 import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemented
-import 'package:htoochoon_flutter/WEB_RTC/features/lobby/join_live_by_code_screen.dart';
+
 import 'package:htoochoon_flutter/lms_demo/demo_constants.dart';
 import 'package:htoochoon_flutter/lms_demo/demo_screens.dart';
 import 'package:lottie/lottie.dart';
@@ -34,9 +35,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     ClassesTab(),
     CoursesTab(),
     DEMO_MODE ? const DemoOrganizationListScreen() : OrgContextLoader(),
-    ProfileTab(),
+    // SettingsScreen(),
     // NotiAndEmails()
-    StudentJoinSessionPage(),
+    ProfileTab(),
+    NotificationsScreen(),
   ];
 
   @override
@@ -345,6 +347,8 @@ class _PremiumNavigationRail extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       child: Column(
         children: [
+          SizedBox(height: 10),
+
           _FooterButton(
             icon: themeProvider.isDarkMode
                 ? Icons.dark_mode_outlined
@@ -353,7 +357,30 @@ class _PremiumNavigationRail extends StatelessWidget {
             isExtended: isExtended,
             onTap: () => themeProvider.toggleTheme(),
           ),
-
+          SizedBox(height: 10),
+          // _FooterButton(
+          //   icon: Icons.settings,
+          //   label: "Profile",
+          //   isExtended: isExtended,
+          //   onTap: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => SettingsScreen()),
+          //     );
+          //   },
+          // ),
+          // SizedBox(height: 10),
+          _FooterButton(
+            icon: Icons.settings,
+            label: "Settings",
+            isExtended: isExtended,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
+              );
+            },
+          ),
           const SizedBox(height: 6),
 
           // _FooterButton(

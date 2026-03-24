@@ -418,7 +418,7 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
                 const SizedBox(height: AppTheme.space2xl),
                 _SubmitButton(
                   textColorGoogle: Theme.of(context).colorScheme.secondary,
-                  textColor: Theme.of(context).colorScheme.inversePrimary,
+                  textColor: Theme.of(context).colorScheme.background,
                   isSignUp: _isSignUp,
                   isLoading: authProvider.isLoading,
                   onPressed: () => _handleSubmit(authProvider, context),
