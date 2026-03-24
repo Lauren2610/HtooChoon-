@@ -7,10 +7,14 @@ import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Screens/Classes/classes_tab.dart';
 import 'package:htoochoon_flutter/Screens/Courses/courses_tab.dart';
 import 'package:htoochoon_flutter/Screens/Home/home_tab.dart';
+import 'package:htoochoon_flutter/Screens/Notification/notification.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_core_home.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/OrgMainScreens/org_dashboard_wrapper.dart';
 import 'package:htoochoon_flutter/Screens/OrgScreens/org_context_loader.dart';
 import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart'; // Implemented
+
+import 'package:htoochoon_flutter/lms_demo/demo_constants.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_screens.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
@@ -30,9 +34,11 @@ class _MainScaffoldState extends State<MainScaffold> {
     HomeTab(),
     ClassesTab(),
     CoursesTab(),
-    OrgContextLoader(),
+    DEMO_MODE ? const DemoOrganizationListScreen() : OrgContextLoader(),
+    // SettingsScreen(),
+    // NotiAndEmails()
     ProfileTab(),
-    NotiAndEmails(),
+    NotificationsScreen(),
   ];
 
   @override
@@ -157,8 +163,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _drawerItem(IconData icon, String label, int index) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.inversePrimary),
+      title: Text(
+        label,
+        style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary),
+      ),
       selected: _selectedIndex == index,
       onTap: () {
         Navigator.pop(context);
@@ -187,6 +196,7 @@ class _PremiumNavigationRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.inversePrimary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ClipRRect(
@@ -197,7 +207,7 @@ class _PremiumNavigationRail extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.black.withOpacity(0.35)
-                : Theme.of(context).colorScheme.primary,
+                : Theme.of(context).scaffoldBackgroundColor,
             border: Border(
               right: BorderSide(
                 color: Colors.white.withOpacity(0.08),
@@ -215,22 +225,19 @@ class _PremiumNavigationRail extends StatelessWidget {
                 child: Theme(
                   data: Theme.of(context).copyWith(
                     navigationRailTheme: NavigationRailThemeData(
-                      selectedIconTheme: const IconThemeData(
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      selectedIconTheme: IconThemeData(color: color, size: 22),
                       unselectedIconTheme: IconThemeData(
-                        color: Colors.white.withOpacity(0.7),
+                        color: color.withOpacity(0.7),
                         size: 21,
                       ),
-                      selectedLabelTextStyle: const TextStyle(
-                        color: Colors.white,
+                      selectedLabelTextStyle: TextStyle(
+                        color: color,
                         fontWeight: FontWeight.w600,
                       ),
                       unselectedLabelTextStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: color.withOpacity(0.7),
                       ),
-                      indicatorColor: Colors.white.withOpacity(0.12),
+                      indicatorColor: color.withOpacity(0.12),
                       useIndicator: true,
                     ),
                   ),
@@ -340,6 +347,8 @@ class _PremiumNavigationRail extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       child: Column(
         children: [
+          SizedBox(height: 10),
+
           _FooterButton(
             icon: themeProvider.isDarkMode
                 ? Icons.dark_mode_outlined
@@ -348,7 +357,30 @@ class _PremiumNavigationRail extends StatelessWidget {
             isExtended: isExtended,
             onTap: () => themeProvider.toggleTheme(),
           ),
-
+          SizedBox(height: 10),
+          // _FooterButton(
+          //   icon: Icons.settings,
+          //   label: "Profile",
+          //   isExtended: isExtended,
+          //   onTap: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => SettingsScreen()),
+          //     );
+          //   },
+          // ),
+          // SizedBox(height: 10),
+          _FooterButton(
+            icon: Icons.settings,
+            label: "Settings",
+            isExtended: isExtended,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
+              );
+            },
+          ),
           const SizedBox(height: 6),
 
           // _FooterButton(

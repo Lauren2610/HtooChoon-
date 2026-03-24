@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
 import 'package:htoochoon_flutter/Providers/org_provider.dart';
 import 'package:htoochoon_flutter/Providers/theme_provider.dart';
-import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
+
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:provider/provider.dart';
 
@@ -12,12 +12,30 @@ import 'package:provider/provider.dart';
 /// - Icon-first design
 /// - Clear visual hierarchy
 /// - Contextual user profile
+// premium_sidebar.dart
+// Refactored to match screenshot:
+//  - Org name + subtitle at top (no gradient icon box)
+//  - Nav items: icon + label, selected = primary color text/icon + right-side accent bar
+//  - No background fill on selected item (just color + accent border)
+//  - Section labels (MAIN, PEOPLE) only in extended mode
+//  - Footer: theme toggle, settings, user profile, exit org
+//  - Full AppTheme token usage, dark/light safe
+// premium_sidebar.dart
+// Refactored to match screenshot:
+//  - Org name + subtitle at top (no gradient icon box)
+//  - Nav items: icon + label, selected = primary color text/icon + right-side accent bar
+//  - No background fill on selected item (just color + accent border)
+//  - Section labels (MAIN, PEOPLE) only in extended mode
+//  - Footer: theme toggle, settings, user profile, exit org
+//  - Full AppTheme token usage, dark/light safe
+
 class PremiumSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final bool isExtended;
   final String? orgImageUrl;
   final String orgName;
+
   const PremiumSidebar({
     super.key,
     required this.selectedIndex,
@@ -29,61 +47,44 @@ class PremiumSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      width: isExtended ? 280 : 72,
+      width: isExtended ? 260 : 68,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           right: BorderSide(color: AppTheme.getBorder(context), width: 1),
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo & Org Name
-          _buildHeader(context, isExtended),
+          _buildHeader(context),
 
-          const SizedBox(height: AppTheme.spaceLg),
+          const SizedBox(height: AppTheme.spaceSm),
 
-          // Navigation Items
+          // ── Nav Items ──────────────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSm),
+              padding: EdgeInsets.symmetric(
+                horizontal: isExtended ? AppTheme.spaceMd : AppTheme.spaceXs,
+                vertical: AppTheme.spaceXs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isExtended) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppTheme.spaceMd,
-                        0,
-                        AppTheme.spaceMd,
-                        AppTheme.spaceXs,
-                      ),
-                      child: Text(
-                        'MAIN',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.getTextTertiary(context),
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceXs),
-                  ],
+                  if (isExtended) _SectionLabel(label: 'MAIN'),
 
                   _NavItem(
                     icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
+                    selectedIcon: Icons.home_rounded,
                     label: 'Dashboard',
                     isSelected: selectedIndex == 0,
                     isExtended: isExtended,
                     onTap: () => onDestinationSelected(0),
                   ),
-
                   _NavItem(
                     icon: Icons.layers_outlined,
-                    selectedIcon: Icons.layers,
+                    selectedIcon: Icons.layers_rounded,
                     label: 'Programs',
                     isSelected: selectedIndex == 1,
                     isExtended: isExtended,
@@ -91,46 +92,30 @@ class PremiumSidebar extends StatelessWidget {
                   ),
 
                   if (isExtended) ...[
-                    const SizedBox(height: AppTheme.spaceLg),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppTheme.spaceMd,
-                        0,
-                        AppTheme.spaceMd,
-                        AppTheme.spaceXs,
-                      ),
-                      child: Text(
-                        'PEOPLE',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.getTextTertiary(context),
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceXs),
-                  ],
+                    const SizedBox(height: AppTheme.spaceMd),
+                    _SectionLabel(label: 'PEOPLE'),
+                  ] else
+                    const SizedBox(height: AppTheme.spaceSm),
 
                   _NavItem(
-                    icon: Icons.people_outline,
-                    selectedIcon: Icons.people,
+                    icon: Icons.people_outline_rounded,
+                    selectedIcon: Icons.people_rounded,
                     label: 'All Members',
                     isSelected: selectedIndex == 2,
                     isExtended: isExtended,
                     onTap: () => onDestinationSelected(2),
                   ),
-
                   _NavItem(
                     icon: Icons.school_outlined,
-                    selectedIcon: Icons.school,
+                    selectedIcon: Icons.school_rounded,
                     label: 'Teachers',
                     isSelected: selectedIndex == 3,
                     isExtended: isExtended,
                     onTap: () => onDestinationSelected(3),
                   ),
-
                   _NavItem(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
+                    icon: Icons.person_outline_rounded,
+                    selectedIcon: Icons.person_rounded,
                     label: 'Students',
                     isSelected: selectedIndex == 4,
                     isExtended: isExtended,
@@ -141,65 +126,87 @@ class PremiumSidebar extends StatelessWidget {
             ),
           ),
 
-          // Spacer before footer
-          const Divider(height: 1),
+          Divider(height: 1, color: AppTheme.getBorder(context)),
 
-          // Footer
-          _buildFooter(context, isExtended),
+          _buildFooter(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isExtended) {
+  // ── Header ───────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(isExtended ? AppTheme.spaceLg : AppTheme.spaceMd),
-      child: Row(
-        mainAxisAlignment: isExtended
-            ? MainAxisAlignment.start
-            : MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceXs),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-              ),
-              borderRadius: AppTheme.borderRadiusMd,
-            ),
-            child: (orgImageUrl == null)
-                ? const Icon(Icons.school, color: Colors.white, size: 24)
-                : Image.asset(orgImageUrl.toString(), height: 70),
-          ),
-          if (isExtended) ...[
-            const SizedBox(width: AppTheme.spaceSm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    orgName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'Learning Platform',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        isExtended ? AppTheme.spaceLg : AppTheme.spaceMd,
+        AppTheme.spaceLg,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
       ),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppTheme.getBorder(context), width: 1),
+        ),
+      ),
+      child: isExtended
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Org logo + name row
+                Row(
+                  children: [
+                    _OrgAvatar(
+                      orgImageUrl: orgImageUrl,
+                      orgName: orgName,
+                      size: 36,
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            orgName,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Modern LMS',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppTheme.getTextSecondary(context),
+                                  fontSize: 12,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Center(
+              child: _OrgAvatar(
+                orgImageUrl: orgImageUrl,
+                orgName: orgName,
+                size: 32,
+              ),
+            ),
     );
   }
 
-  Widget _buildFooter(BuildContext context, bool isExtended) {
+  // ── Footer ───────────────────────────────────────────────────────────────
+
+  Widget _buildFooter(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final orgProvider = Provider.of<OrgProvider>(context, listen: false);
 
@@ -207,24 +214,28 @@ class PremiumSidebar extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       child: Column(
         children: [
-          // Theme Toggle
+          // Theme toggle
           _FooterButton(
-            icon: themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            icon: themeProvider.isDarkMode
+                ? Icons.dark_mode_rounded
+                : Icons.light_mode_rounded,
             label: themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
             isExtended: isExtended,
-            onTap: () => themeProvider.toggleTheme(),
+            onTap: themeProvider.toggleTheme,
             trailing: isExtended
-                ? Switch(
-                    value: themeProvider.isDarkMode,
-                    onChanged: (_) => themeProvider.toggleTheme(),
-                    activeColor: Theme.of(context).colorScheme.primary,
+                ? Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: themeProvider.isDarkMode,
+                      onChanged: (_) => themeProvider.toggleTheme(),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
                   )
                 : null,
           ),
 
-          const SizedBox(height: AppTheme.spaceXs),
+          const SizedBox(height: AppTheme.space2xs),
 
-          // Settings
           _FooterButton(
             icon: Icons.settings_outlined,
             label: 'Settings',
@@ -232,19 +243,17 @@ class PremiumSidebar extends StatelessWidget {
             onTap: () {},
           ),
 
-          const SizedBox(height: AppTheme.spaceMd),
+          const SizedBox(height: AppTheme.spaceSm),
 
-          // User Profile
           _UserProfileCard(isExtended: isExtended),
 
-          const SizedBox(height: AppTheme.spaceMd),
+          const SizedBox(height: AppTheme.spaceSm),
 
-          // Exit Organization
           _FooterButton(
-            icon: Icons.logout,
+            icon: Icons.logout_rounded,
             label: 'Exit Organization',
             isExtended: isExtended,
-            onTap: () => orgProvider.leaveOrganization(),
+            onTap: orgProvider.leaveOrganization,
             color: AppTheme.warning,
           ),
         ],
@@ -252,6 +261,89 @@ class PremiumSidebar extends StatelessWidget {
     );
   }
 }
+
+// ── Org Avatar ───────────────────────────────────────────────────────────────
+
+class _OrgAvatar extends StatelessWidget {
+  final String? orgImageUrl;
+  final String orgName;
+  final double size;
+
+  const _OrgAvatar({
+    required this.orgImageUrl,
+    required this.orgName,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final initials = orgName.isNotEmpty
+        ? orgName
+              .trim()
+              .split(' ')
+              .take(2)
+              .map((w) => w[0].toUpperCase())
+              .join()
+        : '?';
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: primary.withOpacity(0.12),
+        borderRadius: AppTheme.borderRadiusMd,
+        border: Border.all(color: primary.withOpacity(0.25), width: 1),
+      ),
+      child: orgImageUrl != null
+          ? ClipRRect(
+              borderRadius: AppTheme.borderRadiusMd,
+              child: Image.asset(orgImageUrl!, fit: BoxFit.cover),
+            )
+          : Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  color: primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: size * 0.35,
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+// ── Section Label ─────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceSm,
+        AppTheme.spaceXs,
+        AppTheme.spaceSm,
+        AppTheme.space2xs,
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppTheme.getTextTertiary(context),
+          letterSpacing: 1.4,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Nav Item — right-accent selected style (matches screenshot) ──────────────
 
 class _NavItem extends StatefulWidget {
   final IconData icon;
@@ -279,68 +371,73 @@ class _NavItemState extends State<_NavItem> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.isSelected
-        ? Theme.of(context).colorScheme.primary
-        : AppTheme.getTextSecondary(context);
-
-    final backgroundColor = widget.isSelected
-        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+    final primary = Theme.of(context).colorScheme.primary;
+    final iconColor = widget.isSelected
+        ? primary
         : _isHovered
-        ? AppTheme.getSurfaceVariant(context)
-        : Colors.transparent;
+        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.75)
+        : AppTheme.getTextSecondary(context);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onTap,
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.symmetric(vertical: 1),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? primary.withOpacity(0.07)
+                : _isHovered
+                ? AppTheme.getSurfaceVariant(context)
+                : Colors.transparent,
             borderRadius: AppTheme.borderRadiusMd,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.isExtended
-                    ? AppTheme.spaceMd
-                    : AppTheme.spaceSm,
-                vertical: AppTheme.spaceSm,
+            // Right-side accent bar (visible in screenshot on selected item)
+            border: widget.isSelected
+                ? Border(right: BorderSide(color: primary, width: 3))
+                : null,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isExtended ? AppTheme.spaceMd : AppTheme.spaceSm,
+            vertical: AppTheme.spaceSm,
+          ),
+          child: Row(
+            mainAxisAlignment: widget.isExtended
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.isSelected ? widget.selectedIcon : widget.icon,
+                color: iconColor,
+                size: 22,
               ),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: AppTheme.borderRadiusMd,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    widget.isSelected ? widget.selectedIcon : widget.icon,
-                    color: color,
-                    size: 22,
-                  ),
-                  if (widget.isExtended) ...[
-                    const SizedBox(width: AppTheme.spaceSm),
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: color,
-                          fontWeight: widget.isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
+              if (widget.isExtended) ...[
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: widget.isSelected
+                          ? primary
+                          : AppTheme.getTextSecondary(context),
+                      fontWeight: widget.isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
-                  ],
-                ],
-              ),
-            ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
     );
   }
 }
+
+// ── Footer Button ────────────────────────────────────────────────────────────
 
 class _FooterButton extends StatefulWidget {
   final IconData icon;
@@ -373,43 +470,41 @@ class _FooterButtonState extends State<_FooterButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: AppTheme.borderRadiusMd,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.isExtended
-                  ? AppTheme.spaceMd
-                  : AppTheme.spaceSm,
-              vertical: AppTheme.spaceSm,
-            ),
-            decoration: BoxDecoration(
-              color: _isHovered
-                  ? AppTheme.getSurfaceVariant(context)
-                  : Colors.transparent,
-              borderRadius: AppTheme.borderRadiusMd,
-            ),
-            child: Row(
-              children: [
-                Icon(widget.icon, color: color, size: 20),
-                if (widget.isExtended) ...[
-                  const SizedBox(width: AppTheme.spaceSm),
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w500,
-                      ),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isExtended ? AppTheme.spaceMd : AppTheme.spaceSm,
+            vertical: AppTheme.spaceSm,
+          ),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? AppTheme.getSurfaceVariant(context)
+                : Colors.transparent,
+            borderRadius: AppTheme.borderRadiusMd,
+          ),
+          child: Row(
+            mainAxisAlignment: widget.isExtended
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, color: color, size: 20),
+              if (widget.isExtended) ...[
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
+                ),
                 if (widget.trailing != null) widget.trailing!,
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -417,72 +512,101 @@ class _FooterButtonState extends State<_FooterButton> {
   }
 }
 
-class _UserProfileCard extends StatelessWidget {
+// ── User Profile Card ─────────────────────────────────────────────────────────
+
+class _UserProfileCard extends StatefulWidget {
   final bool isExtended;
 
   const _UserProfileCard({required this.isExtended});
 
   @override
+  State<_UserProfileCard> createState() => _UserProfileCardState();
+}
+
+class _UserProfileCardState extends State<_UserProfileCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(isExtended ? AppTheme.spaceSm : AppTheme.spaceXs),
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceVariant(context),
-        borderRadius: AppTheme.borderRadiusMd,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-              ),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            ),
-            child: const Center(
-              child: Text(
-                'AD',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {},
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: EdgeInsets.all(
+            widget.isExtended ? AppTheme.spaceSm : AppTheme.spaceXs,
+          ),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? AppTheme.getSurfaceVariant(context)
+                : AppTheme.getSurfaceVariant(context).withOpacity(0.6),
+            borderRadius: AppTheme.borderRadiusMd,
+            border: Border.all(color: AppTheme.getBorder(context), width: 1),
+          ),
+          child: Row(
+            mainAxisAlignment: widget.isExtended
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: [
+              // Avatar
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                child: const Center(
+                  child: Text(
+                    'AD',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              if (widget.isExtended) ...[
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin User',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'View profile',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: AppTheme.getTextTertiary(context),
+                ),
+              ],
+            ],
           ),
-          if (isExtended) ...[
-            const SizedBox(width: AppTheme.spaceSm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Admin User',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    'View profile',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 16,
-              color: AppTheme.getTextTertiary(context),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

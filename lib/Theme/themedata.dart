@@ -9,12 +9,14 @@ class AppTheme {
   // ============================================================
 
   // Light Theme Colors
-  static const _lightPrimary = Color(0xFF0F172A); // Slate 900
-  static const _lightPrimaryVariant = Color(0xFF1E293B); // Slate 800
-  static const _lightAccent = Color(0xFF1c2e4a); // Blue 500
-  static const _lightAccentVariant = Color(0xFF152238); // Blue 600
 
-  static const _lightBackground = Color(0xFFFAFAFA); // Neutral 50
+  // static const _lightPrimaryVariant = Color(0xFF1E293B); // Slate 800
+  // static const _lightAccentVariant = Color(0xFF152238); // Blue
+  static const _lightAccent = Color(0xff294469);
+  static const _lightPrimary = Color(0xFF0F172A); // S
+  static const _lightTertitary = Color(0xFF1c2e4a); // Blue 500
+
+  static const _lightBackground = Color(0xFFF2F4F6); // Neutral 50
   static const _lightSurface = Color(0xFFFFFFFF);
   static const _lightSurfaceVariant = Color(0xFFF5F5F5); // Neutral 100
 
@@ -259,6 +261,8 @@ class AppTheme {
     brightness: Brightness.light,
 
     colorScheme: const ColorScheme.light(
+      inversePrimary: Colors.black,
+      tertiary: _lightTertitary,
       primary: _lightAccent,
       primaryContainer: Color(0xFFEFF6FF), // Blue 50
       secondary: _lightPrimary,
@@ -423,6 +427,7 @@ class AppTheme {
     brightness: Brightness.dark,
 
     colorScheme: const ColorScheme.dark(
+      inversePrimary: Colors.white,
       primary: _darkAccent,
       primaryContainer: Color(0xFF1E3A8A), // Blue 900
       secondary: _darkPrimary,
@@ -584,6 +589,12 @@ class AppTheme {
   // ============================================================
   // HELPER GETTERS
   // ============================================================
+
+  static Color getTextPrimary(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.light
+        ? _lightTextPrimary
+        : _darkTextPrimary;
+  }
 
   static Color getTextSecondary(BuildContext context) {
     return Theme.of(context).brightness == Brightness.light

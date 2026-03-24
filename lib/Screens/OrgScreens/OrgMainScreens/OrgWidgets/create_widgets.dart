@@ -576,6 +576,7 @@ class CourseDetailScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ClassDetailScreen(
+                                  role: "teacher",
                                   classId: cls['courseId'],
                                   className: cls['name'],
                                 ),

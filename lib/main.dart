@@ -14,14 +14,19 @@ import 'package:htoochoon_flutter/Providers/subscription_provider.dart';
 import 'package:htoochoon_flutter/Providers/theme_provider.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
+import 'package:htoochoon_flutter/Screens/Home/home_tab.dart';
 import 'package:htoochoon_flutter/Screens/MainLayout/main_scaffold.dart';
 import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Screens/Teacher/Home/teacher_dashboard_screen.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
+import 'package:htoochoon_flutter/WEB_RTC/features/meeting/provider/meeting_provider.dart';
 import 'package:htoochoon_flutter/api/api_service.dart';
 import 'package:htoochoon_flutter/firebase_options.dart';
+import 'package:htoochoon_flutter/lms_demo/demo_services.dart'; // DEMO MODE
 import 'package:htoochoon_flutter/lms/forms/screens/lms_home_screen.dart';
-
+import 'package:htoochoon_flutter/WEB_RTC/core/services/socket_service.dart';
+import 'package:htoochoon_flutter/WEB_RTC/core/services/webrtc_service.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // New
@@ -58,6 +63,18 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        /// SERVICES
+        Provider<ApiService>.value(value: apiService),
+
+        // ✅ Single SocketService provider - update IP to match your network
+        Provider<SocketService>(
+          create: (_) => SocketService(baseUrl: 'http://172.16.22.216:3000'),
+        ),
+
+        ProxyProvider<SocketService, WebRTCService>(
+          update: (_, socket, __) => WebRTCService(socket),
+        ),
+
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => LoginProvider()),
         ChangeNotifierProvider(create: (context) => UserProvider()),
@@ -69,8 +86,28 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => SubscriptionProvider(),
         ), // New
+        /// MEETING PROVIDER (uses the SocketService and WebRTCService from providers above)
+        ChangeNotifierProxyProvider4<
+          SocketService,
+          WebRTCService,
+          ApiService,
+          AuthProvider,
+          MeetingProvider
+        >(
+          create: (context) => MeetingProvider(
+            context.read<SocketService>(),
+            context.read<WebRTCService>(),
+            apiService,
+            AuthProvider(apiService),
+          ),
+          update: (context, socket, webrtc, api, auth, previous) =>
+              MeetingProvider(socket, webrtc, api, auth),
+        ),
 
         ChangeNotifierProvider(create: (context) => InvitationProvider()),
+        ChangeNotifierProvider(
+          create: (context) => DemoServices(dio),
+        ), // DEMO MODE
       ],
       child: const MyApp(),
     ),
@@ -92,7 +129,7 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.isDarkMode
               ? ThemeMode.dark
               : ThemeMode.light,
-          home: const AuthWrapper(),
+          home: AuthWrapper(),
         );
       },
     );

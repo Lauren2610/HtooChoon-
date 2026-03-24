@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
+import 'package:htoochoon_flutter/Screens/Profile/profile_tab.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:provider/provider.dart';
 
@@ -37,21 +38,44 @@ class _ProfileMenuState extends State<ProfileMenu> {
 
         const PopupMenuDivider(),
 
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 1,
-          child: _MenuItem(icon: Icons.person_outline, label: "Profile"),
+          child: _MenuItem(
+            icon: Icons.person_outline,
+            label: "Profile",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileMenu()),
+              );
+            },
+          ),
         ),
 
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 2,
-          child: _MenuItem(icon: Icons.settings_outlined, label: "Settings"),
+          child: _MenuItem(
+            icon: Icons.settings_outlined,
+            label: "Settings",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileMenu()),
+              );
+            },
+          ),
         ),
 
         const PopupMenuDivider(),
 
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 3,
-          child: _MenuItem(icon: Icons.logout, label: "Logout", isDanger: true),
+          child: _MenuItem(
+            icon: Icons.logout,
+            label: "Logout",
+            isDanger: true,
+            onPressed: authProvider.logout,
+          ),
         ),
       ],
       child: MouseRegion(
@@ -103,8 +127,10 @@ class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isDanger;
+  final VoidCallback onPressed;
 
   const _MenuItem({
+    required this.onPressed,
     required this.icon,
     required this.label,
     this.isDanger = false,
@@ -114,15 +140,18 @@ class _MenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isDanger ? Colors.red : AppTheme.getTextTertiary(context);
 
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: TextStyle(color: color, fontWeight: FontWeight.w500),
-        ),
-      ],
+    return ElevatedButton(
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 }

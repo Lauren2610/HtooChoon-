@@ -102,10 +102,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
 
       final response = await apiService.register(request);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
-      );
+
       notifyListeners();
       return response;
     } catch (e) {
@@ -239,7 +236,6 @@ class AuthProvider extends ChangeNotifier {
           }
 
           if (context.mounted) {
-            // Use pushReplacement to prevent going back to login
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
