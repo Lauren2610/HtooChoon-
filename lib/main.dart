@@ -68,7 +68,8 @@ void main() async {
 
         // ✅ Single SocketService provider - update IP to match your network
         Provider<SocketService>(
-          create: (_) => SocketService(baseUrl: 'http://172.16.22.216:3000'),
+          create: (_) =>
+              SocketService(baseUrl: 'http://htoochoon.kargate.site:9690/'),
         ),
 
         ProxyProvider<SocketService, WebRTCService>(
