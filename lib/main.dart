@@ -110,10 +110,16 @@ class AuthWrapper extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (authProvider.accessToken != null) {
-      return MainScaffold();
-    }
+    switch (authProvider.status) {
+      case AuthStatus.authenticated:
+        return MainScaffold();
 
-    return const PremiumLoginScreen();
+      case AuthStatus.needsOtp:
+        return OtpScreen(email: authProvider.otpEmail ?? "");
+
+      case AuthStatus.unauthenticated:
+      default:
+        return const PremiumLoginScreen();
+    }
   }
 }

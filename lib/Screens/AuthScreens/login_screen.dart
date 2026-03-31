@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Providers/login_provider.dart';
+import 'package:htoochoon_flutter/Screens/AuthScreens/otp_screen.dart';
+import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart';
 import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import 'package:provider/provider.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
@@ -253,7 +255,7 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
     });
   }
 
-  void _handleSubmit(AuthProvider provider, BuildContext context) {
+  void _handleSubmit(AuthProvider provider, BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       if (_isSignUp) {
         RegisterRequest registerRequest = RegisterRequest(
@@ -261,13 +263,52 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
           password: _passwordController.text,
           name: _usernameController.text.trim(),
         );
-        provider.register(registerRequest, context);
+
+        final result = await provider.register(registerRequest);
+
+        if (!context.mounted) return;
+
+        if (result == RegisterResult.success) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpScreen(email: registerRequest.email),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Registration failed")));
+        }
       } else {
-        LoginRequest loginRequest = LoginRequest(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-        provider.login(loginRequest, context);
+        if (_formKey.currentState!.validate()) {
+          LoginRequest loginRequest = LoginRequest(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
+
+          final result = await provider.login(loginRequest);
+
+          if (!context.mounted) return;
+
+          if (result == LoginResult.success) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => OnboardingScreen()),
+            );
+          } else if (result == LoginResult.needsOtp) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OtpScreen(email: loginRequest.email),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text("Login failed")));
+          }
+        }
       }
     }
   }

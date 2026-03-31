@@ -10,6 +10,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum AuthStatus { unauthenticated, authenticated, needsOtp }
+
+enum RegisterResult { success, error }
+
+enum LoginResult { success, needsOtp, error }
+
 class AuthProvider extends ChangeNotifier {
   final ApiService apiService;
 
@@ -20,13 +26,16 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _accessToken;
   User? _user;
-
+  AuthStatus _status = AuthStatus.unauthenticated;
+  AuthStatus get status => _status;
   String? _userId;
   bool get isLoading => _isLoading;
   String? get accessToken => _accessToken;
   User? get user => _user;
 
   String? get userId => _userId;
+  String? _otpEmail;
+  String? get otpEmail => _otpEmail;
 
   /// =========================
   /// LOAD USER FROM STORAGE
@@ -93,24 +102,19 @@ class AuthProvider extends ChangeNotifier {
   /// =========================
   /// REGISTER
   /// =========================
-  Future<RegisterResponse?> register(
-    RegisterRequest request,
-    BuildContext context,
-  ) async {
+  Future<RegisterResult> register(RegisterRequest request) async {
     try {
       _isLoading = true;
       notifyListeners();
 
       final response = await apiService.register(request);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => OtpScreen(email: request.email)),
-      );
-      notifyListeners();
-      return response;
+      _otpEmail = request.email;
+      _status = AuthStatus.needsOtp;
+
+      return RegisterResult.success;
     } catch (e) {
       debugPrint("Register Error: $e");
-      rethrow;
+      return RegisterResult.error;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -179,16 +183,99 @@ class AuthProvider extends ChangeNotifier {
   /// =========================
   /// LOGIN
   /// =========================
-  Future<void> login(LoginRequest request, BuildContext context) async {
-    _isLoading = true;
-    notifyListeners();
+  // Future<void> login(LoginRequest request, BuildContext context) async {
+  //   _isLoading = true;
+  //   notifyListeners();
+  //   try {
+  //     print("Auth_provider: login called");
+  //
+  //     // Call API
+  //     final loginResponse = await apiService.login(request);
+  //
+  //     // Save user and token
+  //     _accessToken = loginResponse.access_token.toString();
+  //     _user = loginResponse.data;
+  //     await saveUserToPrefs(_user!, accessToken: _accessToken);
+  //
+  //     _isLoading = false;
+  //     notifyListeners();
+  //
+  //     // Navigate to onboarding
+  //     if (context.mounted) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (_) => OnboardingScreen()),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Login Error: $e");
+  //
+  //     if (e is DioException) {
+  //       final data = e.response?.data;
+  //
+  //       String? message;
+  //
+  //       if (data is Map) {
+  //         message = data["message"];
+  //       } else if (data is String) {
+  //         message = data;
+  //       }
+  //
+  //       print("ERROR MESSAGE: $message");
+  //
+  //       if (message != null &&
+  //           message.contains("Email Not verified or user is not active")) {
+  //         print("Email not verified - requesting OTP");
+  //
+  //         // Stop loading before navigating
+  //         _isLoading = false;
+  //         notifyListeners();
+  //
+  //         try {
+  //           // Request OTP before navigating to OTP screen (silent to avoid loading state changes)
+  //           await requestOtpSilent(
+  //             RequestOtpRequest(email: request.email, action: "VERIFY_EMAIL"),
+  //           );
+  //
+  //           print("OTP requested successfully");
+  //         } catch (otpError) {
+  //           print("Failed to request OTP: $otpError");
+  //           // Continue to OTP screen even if request fails (OTP might already be sent)
+  //         }
+  //
+  //         if (context.mounted) {
+  //           // Use pushReplacement to prevent going back to login
+  //           Navigator.pushReplacement(
+  //             context,
+  //             MaterialPageRoute(
+  //               builder: (_) => OtpScreen(email: request.email),
+  //             ),
+  //           );
+  //         }
+  //         return;
+  //       }
+  //
+  //       _isLoading = false;
+  //       notifyListeners();
+  //
+  //       if (context.mounted) {
+  //         ScaffoldMessenger.of(
+  //           context,
+  //         ).showSnackBar(SnackBar(content: Text(message ?? "Login failed")));
+  //       }
+  //     } else {
+  //       _isLoading = false;
+  //       notifyListeners();
+  //     }
+  //   }
+  // }
+  Future<LoginResult> login(LoginRequest request) async {
     try {
-      print("Auth_provider: login called");
+      _isLoading = true;
+      notifyListeners();
 
-      // Call API
       final loginResponse = await apiService.login(request);
 
-      // Save user and token
       _accessToken = loginResponse.access_token.toString();
       _user = loginResponse.data;
       await saveUserToPrefs(_user!, accessToken: _accessToken);
@@ -196,72 +283,36 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      // Navigate to onboarding
-      if (context.mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => OnboardingScreen()),
-        );
-      }
+      return LoginResult.success;
     } catch (e) {
-      debugPrint("Login Error: $e");
-
       if (e is DioException) {
         final data = e.response?.data;
 
         String? message;
-
         if (data is Map) {
           message = data["message"];
         } else if (data is String) {
           message = data;
         }
 
-        print("ERROR MESSAGE: $message");
-
         if (message != null &&
             message.contains("Email Not verified or user is not active")) {
-          print("Email not verified - requesting OTP");
-
-          // Stop loading before navigating
+          await requestOtpSilent(
+            RequestOtpRequest(email: request.email, action: "VERIFY_EMAIL"),
+          );
+          _otpEmail = request.email;
+          _status = AuthStatus.needsOtp;
           _isLoading = false;
           notifyListeners();
 
-          try {
-            // Request OTP before navigating to OTP screen (silent to avoid loading state changes)
-            await requestOtpSilent(
-              RequestOtpRequest(email: request.email, action: "VERIFY_EMAIL"),
-            );
-            print("OTP requested successfully");
-          } catch (otpError) {
-            print("Failed to request OTP: $otpError");
-            // Continue to OTP screen even if request fails (OTP might already be sent)
-          }
-
-          if (context.mounted) {
-            // Use pushReplacement to prevent going back to login
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OtpScreen(email: request.email),
-              ),
-            );
-          }
-          return;
+          return LoginResult.needsOtp;
         }
-
-        _isLoading = false;
-        notifyListeners();
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message ?? "Login failed")));
-        }
-      } else {
-        _isLoading = false;
-        notifyListeners();
       }
+
+      _isLoading = false;
+      notifyListeners();
+
+      return LoginResult.error;
     }
   }
 
