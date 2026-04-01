@@ -147,6 +147,9 @@ class AuthProvider extends ChangeNotifier {
   ) async {
     try {
       final response = await apiService.requestOtp(request);
+      _isLoading = false;
+      notifyListeners();
+      print("OTP requested successfully");
       return response;
     } catch (e) {
       debugPrint("Request OTP Silent Error: $e");
@@ -157,23 +160,21 @@ class AuthProvider extends ChangeNotifier {
   /// =========================
   /// VERIFY OTP
   /// =========================
-  Future<VerifyOtpResponse?> verifyOtp(
-    VerifyOtpRequest request,
-    BuildContext context,
-  ) async {
+  Future<bool> verifyOtp(VerifyOtpRequest request) async {
     try {
+      print("login provider: verify beginning trying");
       _isLoading = true;
-      notifyListeners();
 
+      notifyListeners();
+      print("login provider: trying to send apiservice.verifyrq");
       final response = await apiService.verifyOtp(request);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => OnboardingScreen()),
-      );
-      return response;
+      print("login provider: verify ok");
+      _status = AuthStatus.authenticated;
+
+      return true;
     } catch (e) {
       debugPrint("Verify OTP Error: $e");
-      rethrow;
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -279,10 +280,11 @@ class AuthProvider extends ChangeNotifier {
       _accessToken = loginResponse.access_token.toString();
       _user = loginResponse.data;
       await saveUserToPrefs(_user!, accessToken: _accessToken);
+      _status = AuthStatus.authenticated;
 
       _isLoading = false;
       notifyListeners();
-
+      print("Auth Provider: login result is sucess");
       return LoginResult.success;
     } catch (e) {
       if (e is DioException) {
@@ -291,21 +293,54 @@ class AuthProvider extends ChangeNotifier {
         String? message;
         if (data is Map) {
           message = data["message"];
+          print("message${message}");
         } else if (data is String) {
           message = data;
+          print("message${message}");
         }
 
-        if (message != null &&
-            message.contains("Email Not verified or user is not active")) {
-          await requestOtpSilent(
-            RequestOtpRequest(email: request.email, action: "VERIFY_EMAIL"),
-          );
-          _otpEmail = request.email;
-          _status = AuthStatus.needsOtp;
-          _isLoading = false;
-          notifyListeners();
+        if (e is DioException) {
+          final data = e.response?.data;
 
-          return LoginResult.needsOtp;
+          print("DIO DATA: $data");
+
+          String? message;
+
+          if (data is Map) {
+            message = data["message"]?.toString();
+          } else if (data is String) {
+            message = data;
+          }
+
+          print("Parsed message: $message");
+
+          if (message != null) {
+            final normalized = message.trim().toLowerCase();
+
+            if (normalized.contains("not verified") ||
+                normalized.contains("not active")) {
+              try {
+                await requestOtpSilent(
+                  RequestOtpRequest(
+                    email: request.email,
+                    action: "VERIFY_EMAIL",
+                  ),
+                );
+
+                _otpEmail = request.email;
+                _status = AuthStatus.needsOtp;
+
+                _isLoading = false;
+                notifyListeners();
+
+                return LoginResult.needsOtp;
+              } catch (e) {
+                _isLoading = false;
+                notifyListeners();
+                return LoginResult.error;
+              }
+            }
+          }
         }
       }
 

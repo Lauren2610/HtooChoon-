@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:htoochoon_flutter/Providers/auth_provider.dart';
 import 'package:htoochoon_flutter/Screens/AuthScreens/login_screen.dart';
+import 'package:htoochoon_flutter/Screens/Onboarding/onboarding_screen.dart';
 import 'package:htoochoon_flutter/Theme/themedata.dart';
 import 'package:htoochoon_flutter/models/auth/auth_model.dart';
 import 'package:provider/provider.dart';
@@ -236,7 +237,42 @@ class _OtpScreenState extends State<OtpScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: auth.isLoading ? null : verifyOtp,
+                  onPressed: auth.isLoading
+                      ? null
+                      : () async {
+                          // ✅ FIX HERE
+                          String otp = _pinControllers
+                              .map((c) => c.text)
+                              .join();
+
+                          if (otp.length != 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Please enter complete OTP"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final request = VerifyOtpRequest(
+                            email: widget.email,
+                            action: "VERIFY_EMAIL",
+                            otp: otp,
+                          );
+
+                          final success = await auth.verifyOtp(request);
+
+                          if (!mounted) return; // ✅ important
+
+                          if (success) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => OnboardingScreen(),
+                              ),
+                            );
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       vertical: AppTheme.spaceSm,

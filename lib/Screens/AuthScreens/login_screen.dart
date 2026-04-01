@@ -272,7 +272,7 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => OtpScreen(email: registerRequest.email),
+              builder: (context) => OtpScreen(email: registerRequest.email),
             ),
           );
         } else {
@@ -292,15 +292,17 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
           if (!context.mounted) return;
 
           if (result == LoginResult.success) {
+            print("Login Screen: login result is sucess");
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => OnboardingScreen()),
+              MaterialPageRoute(builder: (context) => OnboardingScreen()),
             );
           } else if (result == LoginResult.needsOtp) {
+            print("Login Screen: login result needs otp");
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => OtpScreen(email: loginRequest.email),
+                builder: (context) => OtpScreen(email: loginRequest.email),
               ),
             );
           } else {
