@@ -306,9 +306,10 @@ class _AuthFormSectionState extends State<_AuthFormSection> {
               ),
             );
           } else {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("Login failed")));
+            print("Login Screen: invalid credentials");
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(SnackBar(content: Text("Login failed")));
           }
         }
       }
